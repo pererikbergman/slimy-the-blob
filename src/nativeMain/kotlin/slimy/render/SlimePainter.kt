@@ -15,7 +15,8 @@ import kotlin.math.floor
  * polygons, so rows of [pixel] stretched into rectangles stand in for one.
  */
 class SlimePainter(private val pixel: TextureRegion, private val face: TextureRegion) {
-    private val crossings = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
+    private val spanLeft = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
+    private val spanRight = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
 
     /** Draws [slime]; with [showParticles] also a dot on every particle, red for the core. */
     fun paint(canvas: Canvas, slime: Slime, showParticles: Boolean) {
@@ -25,15 +26,13 @@ class SlimePainter(private val pixel: TextureRegion, private val face: TextureRe
         val height = (bottom - top).coerceAtLeast(1)
 
         for (row in top until bottom) {
-            val count = Scanline.crossings(body, row + 0.5f, crossings)
+            val count = Scanline.spans(body, row + 0.5f, spanLeft, spanRight)
             val shade = (row - top).toFloat() / height
             val color = if (shade < 0.25f) LIGHT else if (shade < 0.7f) MIDDLE else DARK
-            var k = 0
-            while (k + 1 < count) {
-                val left = floor(crossings[k])
-                val right = ceil(crossings[k + 1])
+            for (k in 0 until count) {
+                val left = floor(spanLeft[k])
+                val right = ceil(spanRight[k])
                 canvas.drawRect(x = left, y = row.toFloat(), width = right - left, height = 1f, color = color, layer = FILL_LAYER, space = DrawSpace.WORLD)
-                k += 2
             }
         }
 

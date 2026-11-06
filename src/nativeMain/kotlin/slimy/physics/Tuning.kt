@@ -84,7 +84,7 @@ object Tuning {
     const val JUMP_BUFFER_SECONDS = 0.1f
 
     /** Particles down each strand of a hanging curtain, the first pinned to the ledge, and the distance between neighbours. */
-    const val CURTAIN_ROWS = 8
+    const val CURTAIN_ROWS = 5
     const val CURTAIN_SEGMENT = 10f
 
     /** A curtain falls gently and loses a little speed each substep, so it swings and settles. */

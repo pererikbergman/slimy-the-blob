@@ -12,38 +12,51 @@ import kotlin.test.assertTrue
 class ScanlineTest {
     private fun body(): SoftBody = SoftBody.semiDisc(Tuning.RADIUS, Tuning.ARC_SEGMENTS, Tuning.BASE_SEGMENTS).also { it.placeAt(100f, 50f) }
 
-    private val out = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
+    private val left = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
+    private val right = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
 
-    @Test
-    fun aRowThroughTheMiddleOfTheDomeCrossesTheOutlineTwiceInOrder() {
-        val b = body()
-        val count = Scanline.crossings(b, 45f, out)
-        assertEquals(2, count)
-        assertTrue(out[0] < out[1])
-        assertTrue(out[0] < 100f && out[1] > 100f)
+    private fun filledArea(b: SoftBody): Float {
+        var covered = 0f
+        for (row in floor(b.minY()).toInt() until ceil(b.maxY()).toInt()) {
+            val count = Scanline.spans(b, row + 0.5f, left, right)
+            for (k in 0 until count) covered += right[k] - left[k]
+        }
+        return covered
     }
 
     @Test
-    fun rowsAboveAndBelowTheBodyCrossNothing() {
+    fun aRowThroughTheMiddleOfTheDomeIsOneStretchAroundTheCentre() {
         val b = body()
-        assertEquals(0, Scanline.crossings(b, 10f, out))
-        assertEquals(0, Scanline.crossings(b, 60f, out))
+        assertEquals(1, Scanline.spans(b, 40f, left, right))
+        assertTrue(left[0] < 100f && right[0] > 100f)
+    }
+
+    @Test
+    fun rowsAboveAndBelowTheBodyHaveNoStretch() {
+        val b = body()
+        assertEquals(0, Scanline.spans(b, 10f, left, right))
+        assertEquals(0, Scanline.spans(b, 60f, left, right))
     }
 
     @Test
     fun theRowsOfAFilledBodyAddUpToItsArea() {
         val b = body()
-        var covered = 0f
-        var row = floor(b.minY()).toInt()
-        while (row < ceil(b.maxY()).toInt()) {
-            val count = Scanline.crossings(b, row + 0.5f, out)
-            var k = 0
-            while (k + 1 < count) {
-                covered += out[k + 1] - out[k]
-                k += 2
-            }
-            row++
+        assertTrue(abs(filledArea(b) - b.area()) < b.area() * 0.05f, "rows cover ${filledArea(b)} of ${b.area()}")
+    }
+
+    @Test
+    fun anOutlineFoldedOverItselfIsStillFilledSolid() {
+        val b = body()
+        val before = filledArea(b)
+        // Swap two stretches of the outline's particles, which twists it into a bow-tie across the dome.
+        for (i in 0 until 4) {
+            val a = 2 + i
+            val c = 9 - i
+            val x = b.x[a]; val y = b.y[a]
+            b.x[a] = b.x[c]; b.y[a] = b.y[c]
+            b.x[c] = x; b.y[c] = y
         }
-        assertTrue(abs(covered - b.area()) < b.area() * 0.05f, "rows cover $covered of ${b.area()}")
+        // An even-odd fill would drop the doubled part; the winding fill covers at least what the folded body encloses.
+        assertTrue(filledArea(b) > before * 0.6f, "only ${filledArea(b)} of $before is filled after the fold")
     }
 }
