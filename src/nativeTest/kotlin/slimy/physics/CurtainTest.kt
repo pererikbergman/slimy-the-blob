@@ -43,7 +43,7 @@ class CurtainTest {
         // Centred on the second strand with its dome up through the strand's lower half.
         val slime = body(centerX = Tuning.TILE, baseY = top + tipRow * Tuning.CURTAIN_SEGMENT + 2f)
         repeat(30) { curtain.step(slime, dt) }
-        for (i in curtain.columns until curtain.count) assertTrue(!slime.contains(curtain.x[i], curtain.y[i]), "particle $i is inside the slime")
+        for (i in curtain.columns until curtain.count) assertTrue(!Outline.contains(slime, curtain.x[i], curtain.y[i]), "particle $i is inside the slime")
         assertTrue(curtain.farthestFromRest() > 3f, "nothing moved, farthest ${curtain.farthestFromRest()}")
         assertTrue(curtain.isFinite())
     }

@@ -53,7 +53,7 @@ class SoftBody private constructor(
             prevY[i] = y[i]
         }
         for (i in 0 until ringCount) {
-            val j = (i + 1) % ringCount
+            val j = next(i)
             edgeRest[i] = distance(i, j)
             spokeRest[i] = distance(i, ringCount)
         }
@@ -61,6 +61,12 @@ class SoftBody private constructor(
         areaSign = if (signed < 0f) -1f else 1f
         restArea = signed * areaSign
     }
+
+    /** The outline particle after [i], wrapping from the last one back to 0. */
+    fun next(i: Int): Int = if (i + 1 == ringCount) 0 else i + 1
+
+    /** The outline particle before [i], wrapping from 0 back to the last one. */
+    fun previous(i: Int): Int = if (i == 0) ringCount - 1 else i - 1
 
     /** Moves the whole body, at rest, so its base lies on [baseY] and its middle on [centerX]. */
     fun placeAt(centerX: Float, baseY: Float) {
@@ -104,7 +110,7 @@ class SoftBody private constructor(
     fun relax(h: Float, edgeCompliance: Float, spokeCompliance: Float, areaCompliance: Float) {
         val edgeSoftness = edgeCompliance / (h * h)
         val spokeSoftness = spokeCompliance / (h * h)
-        for (i in 0 until ringCount) pull(i, (i + 1) % ringCount, edgeRest[i], edgeSoftness, edgeLambda, i)
+        for (i in 0 until ringCount) pull(i, next(i), edgeRest[i], edgeSoftness, edgeLambda, i)
         for (i in 0 until ringCount) pull(i, ringCount, spokeRest[i], spokeSoftness, spokeLambda, i)
         keepArea(areaCompliance / (h * h))
     }
@@ -149,28 +155,17 @@ class SoftBody private constructor(
         }
     }
 
-    private fun gradientX(i: Int): Float = areaSign * 0.5f * (y[(i + 1) % ringCount] - y[(i + ringCount - 1) % ringCount])
+    private fun gradientX(i: Int): Float = areaSign * 0.5f * (y[next(i)] - y[previous(i)])
 
-    private fun gradientY(i: Int): Float = areaSign * 0.5f * (x[(i + ringCount - 1) % ringCount] - x[(i + 1) % ringCount])
+    private fun gradientY(i: Int): Float = areaSign * 0.5f * (x[previous(i)] - x[next(i)])
 
     private fun signedArea(): Float {
         var sum = 0f
         for (i in 0 until ringCount) {
-            val j = (i + 1) % ringCount
+            val j = next(i)
             sum += x[i] * y[j] - x[j] * y[i]
         }
         return sum / 2f
-    }
-
-    /** Whether the point ([px], [py]) is inside the outline. */
-    fun contains(px: Float, py: Float): Boolean {
-        var inside = false
-        var j = ringCount - 1
-        for (i in 0 until ringCount) {
-            if ((y[i] > py) != (y[j] > py) && px < (x[j] - x[i]) * (py - y[i]) / (y[j] - y[i]) + x[i]) inside = !inside
-            j = i
-        }
-        return inside
     }
 
     /** Area enclosed by the outline. */
@@ -230,7 +225,7 @@ class SoftBody private constructor(
     fun maxEdgeStretch(): Float {
         var worst = 0f
         for (i in 0 until ringCount) {
-            val stretch = distance(i, (i + 1) % ringCount) / edgeRest[i]
+            val stretch = distance(i, next(i)) / edgeRest[i]
             if (stretch > worst) worst = stretch
         }
         return worst

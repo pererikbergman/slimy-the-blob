@@ -20,6 +20,7 @@ class Curtain(val left: Float, val right: Float, val top: Float) {
     val y = FloatArray(count)
     private val prevX = FloatArray(count)
     private val prevY = FloatArray(count)
+    private val nearest = FloatArray(2)
 
     init {
         for (r in 0 until rows) for (c in 0 until columns) {
@@ -80,34 +81,16 @@ class Curtain(val left: Float, val right: Float, val top: Float) {
     private fun pushOut(slime: SoftBody, i: Int) {
         val px = x[i]
         val py = y[i]
-        if (!slime.contains(px, py)) return
-        var bestX = px
-        var bestY = py - 1f
-        var bestDistance = Float.MAX_VALUE
-        val n = slime.ringCount
-        for (e in 0 until n) {
-            val f = if (e + 1 == n) 0 else e + 1
-            val ex = slime.x[f] - slime.x[e]
-            val ey = slime.y[f] - slime.y[e]
-            val lengthSquared = ex * ex + ey * ey
-            val t = if (lengthSquared < 1e-9f) 0f else (((px - slime.x[e]) * ex + (py - slime.y[e]) * ey) / lengthSquared).coerceIn(0f, 1f)
-            val cx = slime.x[e] + ex * t
-            val cy = slime.y[e] + ey * t
-            val d = (px - cx) * (px - cx) + (py - cy) * (py - cy)
-            if (d < bestDistance) {
-                bestDistance = d
-                bestX = cx
-                bestY = cy
-            }
-        }
+        if (!Outline.contains(slime, px, py)) return
+        val distanceSquared = Outline.nearestPoint(slime, px, py, nearest)
         // Out through the nearest edge, and a hair past it so the particle is not left on the line.
-        val dx = bestX - px
-        val dy = bestY - py
-        val length = sqrt(dx * dx + dy * dy)
+        val dx = nearest[0] - px
+        val dy = nearest[1] - py
+        val length = sqrt(distanceSquared)
         val nx = if (length < 1e-6f) 0f else dx / length
         val ny = if (length < 1e-6f) -1f else dy / length
-        val newX = bestX + nx * 0.5f
-        val newY = bestY + ny * 0.5f
+        val newX = nearest[0] + nx * 0.5f
+        val newY = nearest[1] + ny * 0.5f
         prevX[i] += (newX - px) * 0.7f
         prevY[i] += (newY - py) * 0.7f
         x[i] = newX

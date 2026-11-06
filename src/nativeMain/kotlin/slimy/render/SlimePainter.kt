@@ -4,6 +4,7 @@ import klyph.platform.Color
 import klyph.render.Canvas
 import klyph.render.DrawSpace
 import klyph.render.TextureRegion
+import slimy.physics.Outline
 import slimy.physics.Slime
 import slimy.physics.Tuning
 import kotlin.math.ceil
@@ -26,7 +27,7 @@ class SlimePainter(private val pixel: TextureRegion, private val face: TextureRe
         val height = (bottom - top).coerceAtLeast(1)
 
         for (row in top until bottom) {
-            val count = Scanline.spans(body, row + 0.5f, spanLeft, spanRight)
+            val count = Outline.spans(body, row + 0.5f, spanLeft, spanRight)
             val shade = (row - top).toFloat() / height
             val color = if (shade < 0.25f) LIGHT else if (shade < 0.7f) MIDDLE else DARK
             for (k in 0 until count) {
@@ -38,7 +39,7 @@ class SlimePainter(private val pixel: TextureRegion, private val face: TextureRe
 
         val n = body.ringCount
         for (i in 0 until n) {
-            val j = if (i + 1 == n) 0 else i + 1
+            val j = body.next(i)
             canvas.drawLine(pixel, body.x[i], body.y[i], body.x[j], body.y[j], 1.5f, OUTLINE, OUTLINE_LAYER)
         }
 
