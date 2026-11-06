@@ -47,28 +47,6 @@ class Solid(
 }
 
 /**
- * What the last [SolidGrid.resolve] touched. [floor] says per particle whether a surface that
- * faces up pushed it during the current substep; [anyFloor] and [anyBounce] collect across the
- * substeps since they were last cleared.
- */
-class Contacts(size: Int) {
-    val floor = BooleanArray(size)
-    var anyFloor = false
-    var anyBounce = false
-
-    /** Forgets which particles touched a floor, to start a substep. */
-    fun beginSubstep() {
-        floor.fill(false)
-    }
-
-    /** Forgets what happened over earlier substeps, to start a step. */
-    fun beginStep() {
-        anyFloor = false
-        anyBounce = false
-    }
-}
-
-/**
  * The level's solids: one per tile in a grid of cells [Tuning.TILE] wide, plus [dynamic] ones that
  * move. A particle is a point, so it can only be inside the one tile it is in, and [resolve] looks
  * at that tile and at every dynamic solid.
@@ -156,9 +134,7 @@ class SolidGrid(val cols: Int, val rows: Int) {
         body.prevX[i] = body.x[i] - vx
         body.prevY[i] = body.y[i] - vy
         if (ny < -0.5f) {
-            contacts.floor[i] = true
-            contacts.anyFloor = true
-            if (solid.isBouncy) contacts.anyBounce = true
+            contacts.recordFloor(i, solid.isBouncy)
         }
     }
 

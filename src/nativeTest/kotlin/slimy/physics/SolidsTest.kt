@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 
 class SolidsTest {
     private val body = SoftBody.semiDisc(Tuning.RADIUS, Tuning.ARC_SEGMENTS, Tuning.BASE_SEGMENTS)
-    private val contacts = Contacts(body.size)
+    private val contacts = Contacts(body.size, body.ringCount)
 
     /** Puts particle 0 at ([x], [y]) having come from ([fromX], [fromY]), and every other particle far away. */
     private fun particle(x: Float, y: Float, fromX: Float = x, fromY: Float = y) {
@@ -24,7 +24,7 @@ class SolidsTest {
     }
 
     private fun resolve(grid: SolidGrid) {
-        contacts.beginSubstep()
+        contacts.beginStep()
         grid.resolve(body, contacts)
     }
 
@@ -40,8 +40,8 @@ class SolidsTest {
         assertEquals(40f, body.x[0], 0.001f)
         assertEquals(0f, body.y[0] - body.prevY[0], 0.001f)
         assertEquals(5f, body.x[0] - body.prevX[0], 0.001f)
-        assertTrue(contacts.floor[0])
-        assertTrue(contacts.anyFloor)
+        assertTrue(contacts.isOnFloor(0))
+        assertTrue(contacts.touchedFloor)
     }
 
     @Test
@@ -51,7 +51,7 @@ class SolidsTest {
         resolve(grid)
         assertEquals(80f, body.x[0], 0.001f)
         assertEquals(56f, body.y[0], 0.001f)
-        assertFalse(contacts.floor[0])
+        assertFalse(contacts.isOnFloor(0))
     }
 
     @Test
@@ -69,7 +69,7 @@ class SolidsTest {
         resolve(grid)
         assertEquals(40f, body.x[0])
         assertEquals(60f, body.y[0])
-        assertFalse(contacts.anyFloor)
+        assertFalse(contacts.touchedFloor)
     }
 
     @Test
@@ -86,8 +86,8 @@ class SolidsTest {
         val grid = SolidGrid(10, 10).apply { add(Solid.tile(4, 5, isBouncy = true)) }
         particle(72f, 82f, fromY = 70f)
         resolve(grid)
-        assertTrue(contacts.anyBounce)
-        assertTrue(contacts.anyFloor)
+        assertTrue(contacts.touchedBouncePad)
+        assertTrue(contacts.touchedFloor)
     }
 
     @Test
@@ -97,7 +97,7 @@ class SolidsTest {
         resolve(grid)
         assertEquals(40f, body.x[0], 0.001f)
         assertEquals(40f, body.y[0], 0.001f)
-        assertTrue(contacts.floor[0])
+        assertTrue(contacts.isOnFloor(0))
     }
 
     @Test

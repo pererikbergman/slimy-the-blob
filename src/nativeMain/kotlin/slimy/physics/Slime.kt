@@ -15,7 +15,7 @@ class SlimeInput(
  */
 class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     val body: SoftBody = SoftBody.semiDisc(Tuning.RADIUS, Tuning.ARC_SEGMENTS, Tuning.BASE_SEGMENTS)
-    private val contacts = Contacts(body.size)
+    private val contacts = Contacts(body.size, body.ringCount)
 
     /** Whether any particle rested on something facing up during the last step. */
     var isGrounded = false
@@ -44,8 +44,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     /** Puts the slime back at rest with its base on [baseY] and its middle on [x]. */
     fun reset(x: Float, baseY: Float) {
         body.placeAt(x, baseY)
-        contacts.beginStep()
-        contacts.beginSubstep()
+        contacts.clear()
         isGrounded = false
         hasJumped = false
         hasBounced = false
@@ -59,6 +58,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
         val h = dt / Tuning.SUBSTEPS
         hasJumped = false
         hasBounced = false
+        contacts.beginStep()
 
         coyote = if (isGrounded) Tuning.COYOTE_SECONDS else coyote - dt
         jumpBuffer = if (input.jumpPressed) Tuning.JUMP_BUFFER_SECONDS else jumpBuffer - dt
@@ -80,18 +80,16 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
         if (body.meanVelocityY(h) >= 0f) isJumpRising = false
         val gravity = if (isJumpRising && !input.jumpHeld) Tuning.GRAVITY * Tuning.SHORT_HOP_GRAVITY else Tuning.GRAVITY
 
-        contacts.beginStep()
         repeat(Tuning.SUBSTEPS) {
-            contacts.beginSubstep()
             body.integrate(gravity, h, Tuning.DAMPING, Tuning.MAX_STEP)
             repeat(Tuning.RELAX_ITERATIONS) {
                 body.relax(h, Tuning.EDGE_COMPLIANCE, Tuning.SPOKE_COMPLIANCE, Tuning.AREA_COMPLIANCE)
                 grid.resolve(body, contacts)
             }
         }
-        isGrounded = contacts.anyFloor
+        isGrounded = contacts.touchedFloor
 
-        if (contacts.anyBounce && body.meanVelocityY(h) > -Tuning.BOUNCE_SPEED / 2f) {
+        if (contacts.touchedBouncePad && body.meanVelocityY(h) > -Tuning.BOUNCE_SPEED / 2f) {
             for (i in 0 until body.size) body.setVelocityY(i, -Tuning.BOUNCE_SPEED, h)
             hasBounced = true
             isGrounded = false
@@ -102,7 +100,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     /** Every particle leaves upward at once; the ones on the floor get extra lift. */
     private fun jump(h: Float) {
         for (i in 0 until body.size) {
-            val lift = if (i < body.ringCount && contacts.floor[i]) Tuning.JUMP_BASE_LIFT else 0f
+            val lift = if (contacts.wasOnFloor(i)) Tuning.JUMP_BASE_LIFT else 0f
             body.setVelocityY(i, -(Tuning.JUMP_SPEED + lift), h)
         }
         isGrounded = false
