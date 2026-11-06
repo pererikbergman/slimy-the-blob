@@ -6,7 +6,6 @@ import klyph.render.DrawSpace
 import klyph.render.TextureRegion
 import slimy.physics.Outline
 import slimy.physics.Slime
-import slimy.physics.Tuning
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -16,12 +15,16 @@ import kotlin.math.floor
  * polygons, so rows of [pixel] stretched into rectangles stand in for one.
  */
 class SlimePainter(private val pixel: TextureRegion, private val face: TextureRegion) {
-    private val spanLeft = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
-    private val spanRight = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
+    private var spanLeft = FloatArray(0)
+    private var spanRight = FloatArray(0)
 
     /** Draws [slime]; with [showParticles] also a dot on every particle, red for the core. */
     fun paint(canvas: Canvas, slime: Slime, showParticles: Boolean) {
         val body = slime.body
+        if (spanLeft.size < body.ringCount) {
+            spanLeft = FloatArray(body.ringCount)
+            spanRight = FloatArray(body.ringCount)
+        }
         val top = floor(body.minY()).toInt()
         val bottom = ceil(body.maxY()).toInt()
         val height = (bottom - top).coerceAtLeast(1)

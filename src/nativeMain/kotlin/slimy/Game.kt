@@ -22,7 +22,7 @@ import slimy.level.TestLevel
 import slimy.physics.Curtain
 import slimy.physics.Slime
 import slimy.physics.SlimeInput
-import slimy.physics.Tuning
+import slimy.physics.SolidGrid
 import slimy.render.CurtainPainter
 import slimy.render.SlimePainter
 
@@ -39,7 +39,7 @@ private const val SKY_HEIGHT = 240f
 fun App.installGame() {
     val level = TestLevel.level
     val start = checkNotNull(level.start) { "The test level has no start" }
-    val tile = Tuning.TILE
+    val tile = SolidGrid.TILE
 
     // The level's tiles, drawn once as sprites.
     val sheet = assets.spriteSheet("tiles.png", columns = 6, rows = 1, filter = SamplerFilter.NEAREST)

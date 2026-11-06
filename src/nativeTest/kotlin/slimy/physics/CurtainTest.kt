@@ -9,11 +9,11 @@ class CurtainTest {
     private val top = 100f
 
     /** Three tiles wide, so four strands, hanging from y = 100. */
-    private fun curtain() = Curtain(left = 0f, right = 3 * Tuning.TILE, top = top)
+    private fun curtain() = Curtain(left = 0f, right = 3 * SolidGrid.TILE, top = top)
 
-    private fun body(centerX: Float, baseY: Float) = SoftBody.semiDisc(Tuning.RADIUS, Tuning.ARC_SEGMENTS, Tuning.BASE_SEGMENTS).also { it.placeAt(centerX, baseY) }
+    private fun body(centerX: Float, baseY: Float) = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS).also { it.placeAt(centerX, baseY) }
 
-    private fun Curtain.restX(c: Int) = left + c * Tuning.TILE
+    private fun Curtain.restX(c: Int) = left + c * SolidGrid.TILE
 
     private fun Curtain.farthestFromRest(): Float {
         var worst = 0f
@@ -25,7 +25,7 @@ class CurtainTest {
     fun aCurtainHangsStraightDownFromItsAnchorsAndStaysThere() {
         val curtain = curtain()
         repeat(300) { curtain.step(null, dt) }
-        val length = (curtain.rows - 1) * Tuning.CURTAIN_SEGMENT
+        val length = (curtain.rows - 1) * Curtain.SEGMENT
         for (c in 0 until curtain.columns) {
             assertTrue(abs(curtain.y[c] - top) < 0.001f, "anchor $c moved")
             val tip = curtain.y[(curtain.rows - 1) * curtain.columns + c]
@@ -41,7 +41,7 @@ class CurtainTest {
         repeat(60) { curtain.step(null, dt) }
         val tipRow = curtain.rows - 1
         // Centred on the second strand with its dome up through the strand's lower half.
-        val slime = body(centerX = Tuning.TILE, baseY = top + tipRow * Tuning.CURTAIN_SEGMENT + 2f)
+        val slime = body(centerX = SolidGrid.TILE, baseY = top + tipRow * Curtain.SEGMENT + 2f)
         repeat(30) { curtain.step(slime, dt) }
         for (i in curtain.columns until curtain.count) assertTrue(!Outline.contains(slime, curtain.x[i], curtain.y[i]), "particle $i is inside the slime")
         assertTrue(curtain.farthestFromRest() > 3f, "nothing moved, farthest ${curtain.farthestFromRest()}")
@@ -51,7 +51,7 @@ class CurtainTest {
     @Test
     fun aSlimeWalkingThroughSwingsTheCurtainAndItSettlesBackAfter() {
         val curtain = curtain()
-        val baseY = top + (curtain.rows - 1) * Tuning.CURTAIN_SEGMENT + 2f
+        val baseY = top + (curtain.rows - 1) * Curtain.SEGMENT + 2f
         var swung = 0f
         for (step in 0 until 40) {
             curtain.step(body(centerX = -20f + step * 3f, baseY = baseY), dt)

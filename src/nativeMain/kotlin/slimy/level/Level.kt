@@ -3,7 +3,6 @@ package slimy.level
 import slimy.physics.Solid
 import slimy.physics.SolidGrid
 import slimy.physics.SolidShape
-import slimy.physics.Tuning
 import kotlin.math.PI
 import kotlin.math.cos
 
@@ -79,8 +78,8 @@ class Level private constructor(
 ) {
     private var seconds = 0f
 
-    val width: Float get() = cols * Tuning.TILE
-    val height: Float get() = rows * Tuning.TILE
+    val width: Float get() = cols * SolidGrid.TILE
+    val height: Float get() = rows * SolidGrid.TILE
 
     /** Moves everything that moves by [dt] seconds. */
     fun advance(dt: Float) {
@@ -113,7 +112,7 @@ class Level private constructor(
             val curtains = ArrayList<CurtainSpec>()
             var start: Spot? = null
             var finish: Spot? = null
-            val t = Tuning.TILE
+            val t = SolidGrid.TILE
 
             fun solid(col: Int, row: Int, tile: Int, shape: SolidShape = SolidShape.BOX, bouncy: Boolean = false) {
                 grid.add(Solid.tile(col, row, shape, bouncy))
@@ -148,7 +147,7 @@ class Level private constructor(
         }
 
         private fun crusherAt(rows: List<String>, col: Int, row: Int, grid: SolidGrid): Crusher {
-            val t = Tuning.TILE
+            val t = SolidGrid.TILE
             var floorRow = row + 2
             while (floorRow < rows.size && rows[floorRow][col] in ".MSF1234r") floorRow++
             require(floorRow < rows.size) { "The crusher at ($col, $row) has no floor below it" }

@@ -7,9 +7,9 @@ import kotlin.test.assertTrue
 /** The acceptance criteria of the PRD, as tests on small hand-built levels. */
 class AcceptanceTest {
     private val dt = 1f / 60f
-    private val tile = Tuning.TILE
-    private val restWidth = 2 * Tuning.RADIUS
-    private val restArea = SoftBody.semiDisc(Tuning.RADIUS, Tuning.ARC_SEGMENTS, Tuning.BASE_SEGMENTS).area()
+    private val tile = SolidGrid.TILE
+    private val restWidth = 2 * SoftBody.RADIUS
+    private val restArea = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS).area()
 
     private fun solidEverywhere(cols: Int, rows: Int): SolidGrid = SolidGrid(cols, rows).apply {
         for (c in 0 until cols) for (r in 0 until rows) add(Solid.tile(c, r))

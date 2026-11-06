@@ -34,20 +34,20 @@ class Solid(
     companion object {
         /** The solid filling grid cell ([col], [row]) as [shape]. */
         fun tile(col: Int, row: Int, shape: SolidShape = SolidShape.BOX, isBouncy: Boolean = false): Solid {
-            val t = Tuning.TILE
+            val t = SolidGrid.TILE
             return Solid(shape, col * t, row * t, (col + 1) * t, (row + 1) * t, isBouncy, col, row)
         }
 
         /** A ceiling stub: only the top half of cell ([col], [row]) is solid. */
         fun stub(col: Int, row: Int): Solid {
-            val t = Tuning.TILE
+            val t = SolidGrid.TILE
             return Solid(SolidShape.BOX, col * t, row * t, (col + 1) * t, row * t + t / 2f, false, col, row)
         }
     }
 }
 
 /**
- * The level's solids: one per tile in a grid of cells [Tuning.TILE] wide, plus [dynamic] ones that
+ * The level's solids: one per tile in a grid of cells [TILE] wide, plus [dynamic] ones that
  * move. A particle is a point, so it can only be inside the one tile it is in, and [resolve] looks
  * at that tile and at every dynamic solid.
  */
@@ -77,7 +77,7 @@ class SolidGrid(val cols: Int, val rows: Int) {
      * tiles has no seams.
      */
     fun resolve(body: SoftBody, contacts: Contacts) {
-        val tile = Tuning.TILE
+        val tile = TILE
         for (i in 0 until body.size) {
             val col = floor(body.x[i] / tile).toInt()
             val row = floor(body.y[i] / tile).toInt()
@@ -184,4 +184,9 @@ class SolidGrid(val cols: Int, val rows: Int) {
     }
 
     private fun spansHeight(neighbour: Solid, solid: Solid): Boolean = neighbour.top <= solid.top && neighbour.bottom >= solid.bottom
+
+    companion object {
+        /** Side of one level tile. */
+        const val TILE = 16f
+    }
 }

@@ -4,7 +4,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
- * A curtain of hanging strands, like cloth: [Tuning.CURTAIN_ROWS] Verlet particles down each strand,
+ * A curtain of hanging strands, like cloth: [ROWS] Verlet particles down each strand,
  * the top ones pinned along a ledge from [left] to [right] at height [top], one strand every tile.
  * Strands are held to their length and loosely to their neighbours. A slime that moves into the
  * curtain pushes the particles out of its body, so the cloth swings, and settles again after.
@@ -13,8 +13,8 @@ import kotlin.math.sqrt
  * Particle `r * columns + c` is row `r` of strand `c`; row 0 is the pinned one.
  */
 class Curtain(val left: Float, val right: Float, val top: Float) {
-    val columns: Int = ((right - left) / Tuning.TILE).roundToInt() + 1
-    val rows: Int = Tuning.CURTAIN_ROWS
+    val columns: Int = ((right - left) / SolidGrid.TILE).roundToInt() + 1
+    val rows: Int = ROWS
     val count: Int = columns * rows
     val x = FloatArray(count)
     val y = FloatArray(count)
@@ -25,8 +25,8 @@ class Curtain(val left: Float, val right: Float, val top: Float) {
     init {
         for (r in 0 until rows) for (c in 0 until columns) {
             val i = r * columns + c
-            x[i] = left + c * Tuning.TILE
-            y[i] = top + r * Tuning.CURTAIN_SEGMENT
+            x[i] = left + c * SolidGrid.TILE
+            y[i] = top + r * SEGMENT
             prevX[i] = x[i]
             prevY[i] = y[i]
         }
@@ -34,12 +34,12 @@ class Curtain(val left: Float, val right: Float, val top: Float) {
 
     /** Advances the curtain by [dt] seconds; [slime], if there is one, pushes it about. */
     fun step(slime: SoftBody?, dt: Float) {
-        val h = dt / Tuning.SUBSTEPS
-        repeat(Tuning.SUBSTEPS) {
+        val h = dt / SUBSTEPS
+        repeat(SUBSTEPS) {
             integrate(h)
-            repeat(Tuning.CURTAIN_ITERATIONS) {
-                for (r in 0 until rows - 1) for (c in 0 until columns) link(r * columns + c, (r + 1) * columns + c, Tuning.CURTAIN_SEGMENT, 1f, onlyWhenStretched = false)
-                for (r in 1 until rows) for (c in 0 until columns - 1) link(r * columns + c, r * columns + c + 1, Tuning.TILE, Tuning.CURTAIN_SIDE_STIFFNESS, onlyWhenStretched = true)
+            repeat(ITERATIONS) {
+                for (r in 0 until rows - 1) for (c in 0 until columns) link(r * columns + c, (r + 1) * columns + c, SEGMENT, 1f, onlyWhenStretched = false)
+                for (r in 1 until rows) for (c in 0 until columns - 1) link(r * columns + c, r * columns + c + 1, SolidGrid.TILE, SIDE_STIFFNESS, onlyWhenStretched = true)
                 if (slime != null) for (i in columns until count) pushOut(slime, i)
             }
         }
@@ -47,12 +47,12 @@ class Curtain(val left: Float, val right: Float, val top: Float) {
 
     private fun integrate(h: Float) {
         for (i in columns until count) {
-            val vx = (x[i] - prevX[i]) * Tuning.CURTAIN_DAMPING
-            val vy = (y[i] - prevY[i]) * Tuning.CURTAIN_DAMPING
+            val vx = (x[i] - prevX[i]) * DAMPING
+            val vy = (y[i] - prevY[i]) * DAMPING
             prevX[i] = x[i]
             prevY[i] = y[i]
             x[i] += vx
-            y[i] += vy + Tuning.CURTAIN_GRAVITY * h * h
+            y[i] += vy + GRAVITY * h * h
         }
     }
 
@@ -101,5 +101,22 @@ class Curtain(val left: Float, val right: Float, val top: Float) {
     fun isFinite(): Boolean {
         for (i in 0 until count) if (!x[i].isFinite() || !y[i].isFinite()) return false
         return true
+    }
+
+    companion object {
+        /** Substeps per 60 Hz step. The curtain has its own, so it can change without touching the slime. */
+        const val SUBSTEPS = 4
+
+        /** Particles down each strand of a hanging curtain, the first pinned to the ledge, and the distance between neighbours. */
+        const val ROWS = 5
+        const val SEGMENT = 10f
+
+        /** A curtain falls gently and loses a little speed each substep, so it swings and settles. */
+        const val GRAVITY = 900f
+        const val DAMPING = 0.985f
+
+        /** How hard the links between neighbouring strands pull, 0 to 1; low, so the curtain drapes like cloth. */
+        const val SIDE_STIFFNESS = 0.25f
+        const val ITERATIONS = 6
     }
 }

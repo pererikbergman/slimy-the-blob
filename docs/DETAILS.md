@@ -75,7 +75,7 @@ SLIME_ZONE=C ./gradlew run -Pklyph.autopilot=1                       # start in 
 | Path | Contents |
 |---|---|
 | `src/nativeMain/kotlin/slimy/Main.kt`, `Game.kt` | The window, camera, input and HUD. |
-| `src/nativeMain/kotlin/slimy/physics/` | `Tuning` (every number that decides how the slime feels), `SoftBody`, `Solids`, `Slime`, `Curtain` (the hanging red slime). |
+| `src/nativeMain/kotlin/slimy/physics/` | `SoftBody`, `Outline`, `Solids`, `Contacts`, `Slime`, `Curtain`. Each owns the numbers that decide how it behaves, in its `companion object` (the hanging red slime). |
 | `src/nativeMain/kotlin/slimy/level/` | `LevelMap` and `Level` (tile characters in, solids and sprites out) and `TestLevel`. |
 | `src/nativeMain/kotlin/slimy/render/` | `SlimePainter`, `CurtainPainter`, `Scanline`, `Lines`. |
 | `assets/` | `tiles.png` and `tiles.json`, `crusher.png`, `face.png`, `bg.png`. |
@@ -88,7 +88,7 @@ Twenty-two particles form a half-disc outline around one core particle. Stiff di
 hold the outline, soft ones tie it to the core and an area constraint keeps the volume, all XPBD,
 so how soft they are does not depend on the iteration count. The core is thirty-four times heavier than
 an outline particle and stands for the slime's insides: when the outline is held on the rim of a
-gap, its weight drags the body through. `Tuning.kt` explains each number and what moving it does.
+gap, its weight drags the body through. The constants in `Slime`'s companion object explain each number and what moving it does.
 
 To rename the game, change `rootProject.name` in `settings.gradle.kts`, the package in the sources
 and `entryPoint` in `build.gradle.kts`.

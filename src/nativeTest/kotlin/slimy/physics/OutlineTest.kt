@@ -8,10 +8,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class OutlineTest {
-    private fun body(): SoftBody = SoftBody.semiDisc(Tuning.RADIUS, Tuning.ARC_SEGMENTS, Tuning.BASE_SEGMENTS).also { it.placeAt(100f, 50f) }
+    private fun body(): SoftBody = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS).also { it.placeAt(100f, 50f) }
 
-    private val left = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
-    private val right = FloatArray(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS)
+    private val left = FloatArray(SoftBody.ARC_SEGMENTS + SoftBody.BASE_SEGMENTS)
+    private val right = FloatArray(SoftBody.ARC_SEGMENTS + SoftBody.BASE_SEGMENTS)
 
     private fun filledArea(b: SoftBody): Float {
         var covered = 0f

@@ -244,17 +244,40 @@ class SoftBody private constructor(
     }
 
     companion object {
+        /** Radius of the resting half-disc: the slime is 2 * RADIUS wide and RADIUS tall. */
+        const val RADIUS = 13.3f
+
+        /**
+         * How much taller than a half-disc the resting dome is: 1 is a half-circle. The weight of the core
+         * flattens it again, so at 1.3 the slime rests about 31 wide and 15 tall.
+         */
+        const val HEIGHT_SCALE = 1.3f
+
+        /** Ring segments along the dome, and along the flat base. */
+        const val ARC_SEGMENTS = 14
+        const val BASE_SEGMENTS = 8
+
+        /**
+         * How many times heavier than an outline particle the core is. It stands for the slime's
+         * insides, and its weight is what pulls the body through a gap narrower than itself. It is also
+         * what flattens the dome, so rounder slimes and heavier cores pull against each other: with this
+         * shape a slime that lands on a one-tile shaft from a hop sinks through, but one that is placed
+         * on it at rest perches on the rim (it did sink from rest when the dome was lower and the core
+         * 30; see AcceptanceTest and PlaythroughTest).
+         */
+        const val CORE_MASS = 34f
+
         /**
          * A half-disc of [radius]: [arcSegments] segments over the dome from the left end to the
          * right, then [baseSegments] along the flat base back to the left, with the core where the
          * half-disc's centre of mass is, with the dome stretched [heightScale] times taller. The base lies on y = 0 and the middle on x = 0; y grows down.
          */
         fun semiDisc(
-            radius: Float,
-            arcSegments: Int,
-            baseSegments: Int,
-            coreMass: Float = Tuning.CORE_MASS,
-            heightScale: Float = Tuning.HEIGHT_SCALE,
+            radius: Float = RADIUS,
+            arcSegments: Int = ARC_SEGMENTS,
+            baseSegments: Int = BASE_SEGMENTS,
+            coreMass: Float = CORE_MASS,
+            heightScale: Float = HEIGHT_SCALE,
         ): SoftBody {
             val ring = arcSegments + baseSegments
             val xs = FloatArray(ring + 1)

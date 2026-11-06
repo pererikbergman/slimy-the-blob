@@ -6,7 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SolidsTest {
-    private val body = SoftBody.semiDisc(Tuning.RADIUS, Tuning.ARC_SEGMENTS, Tuning.BASE_SEGMENTS)
+    private val body = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS)
     private val contacts = Contacts(body.size, body.ringCount)
 
     /** Puts particle 0 at ([x], [y]) having come from ([fromX], [fromY]), and every other particle far away. */
