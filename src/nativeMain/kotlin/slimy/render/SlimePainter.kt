@@ -43,7 +43,7 @@ class SlimePainter(private val pixel: TextureRegion, private val face: TextureRe
         val n = body.ringCount
         for (i in 0 until n) {
             val j = body.next(i)
-            canvas.drawLine(pixel, body.x[i], body.y[i], body.x[j], body.y[j], 1.5f, OUTLINE, OUTLINE_LAYER)
+            canvas.drawLine(pixel, body.positionX(i), body.positionY(i), body.positionX(j), body.positionY(j), 1.5f, OUTLINE, OUTLINE_LAYER)
         }
 
         canvas.drawSprite(
@@ -56,7 +56,7 @@ class SlimePainter(private val pixel: TextureRegion, private val face: TextureRe
 
         if (showParticles) {
             for (i in 0 until body.size) {
-                canvas.drawRect(body.x[i] - 1f, body.y[i] - 1f, 2f, 2f, if (i == n) RED else WHITE, DEBUG_LAYER, DrawSpace.WORLD)
+                canvas.drawRect(body.positionX(i) - 1f, body.positionY(i) - 1f, 2f, 2f, if (body.isCore(i)) RED else WHITE, DEBUG_LAYER, DrawSpace.WORLD)
             }
         }
     }

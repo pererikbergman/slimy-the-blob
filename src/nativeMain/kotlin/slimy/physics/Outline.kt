@@ -17,10 +17,10 @@ object Outline {
         var winding = 0
         for (i in 0 until body.ringCount) {
             val j = body.next(i)
-            val y0 = body.y[i]
-            val y1 = body.y[j]
+            val y0 = body.positionY(i)
+            val y1 = body.positionY(j)
             if ((y0 <= py) != (y1 <= py)) {
-                val crossingX = body.x[i] + (py - y0) / (y1 - y0) * (body.x[j] - body.x[i])
+                val crossingX = body.positionX(i) + (py - y0) / (y1 - y0) * (body.positionX(j) - body.positionX(i))
                 if (crossingX > px) winding += if (y1 > y0) 1 else -1
             }
         }
@@ -35,12 +35,12 @@ object Outline {
         var best = Float.MAX_VALUE
         for (e in 0 until body.ringCount) {
             val f = body.next(e)
-            val ex = body.x[f] - body.x[e]
-            val ey = body.y[f] - body.y[e]
+            val ex = body.positionX(f) - body.positionX(e)
+            val ey = body.positionY(f) - body.positionY(e)
             val lengthSquared = ex * ex + ey * ey
-            val t = if (lengthSquared < 1e-9f) 0f else (((px - body.x[e]) * ex + (py - body.y[e]) * ey) / lengthSquared).coerceIn(0f, 1f)
-            val cx = body.x[e] + ex * t
-            val cy = body.y[e] + ey * t
+            val t = if (lengthSquared < 1e-9f) 0f else (((px - body.positionX(e)) * ex + (py - body.positionY(e)) * ey) / lengthSquared).coerceIn(0f, 1f)
+            val cx = body.positionX(e) + ex * t
+            val cy = body.positionY(e) + ey * t
             val d = (px - cx) * (px - cx) + (py - cy) * (py - cy)
             if (d < best) {
                 best = d
@@ -60,11 +60,11 @@ object Outline {
         var crossings = 0
         for (i in 0 until body.ringCount) {
             val j = body.next(i)
-            val y0 = body.y[i]
-            val y1 = body.y[j]
+            val y0 = body.positionY(i)
+            val y1 = body.positionY(j)
             if ((y0 <= y) != (y1 <= y)) {
                 // `left` holds each crossing's x and `right` its direction until they are paired up below.
-                left[crossings] = body.x[i] + (y - y0) / (y1 - y0) * (body.x[j] - body.x[i])
+                left[crossings] = body.positionX(i) + (y - y0) / (y1 - y0) * (body.positionX(j) - body.positionX(i))
                 right[crossings] = if (y1 > y0) 1f else -1f
                 crossings++
             }

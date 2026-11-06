@@ -29,10 +29,10 @@ class SoftBody private constructor(
 ) {
     /** Outline particles plus the core. */
     val size: Int = ringCount + 1
-    val x = FloatArray(size)
-    val y = FloatArray(size)
-    val prevX = FloatArray(size)
-    val prevY = FloatArray(size)
+    private val x = FloatArray(size)
+    private val y = FloatArray(size)
+    private val prevX = FloatArray(size)
+    private val prevY = FloatArray(size)
 
     private val edgeRest = FloatArray(ringCount)
     private val spokeRest = FloatArray(ringCount)
@@ -170,6 +170,57 @@ class SoftBody private constructor(
 
     /** Area enclosed by the outline. */
     fun area(): Float = signedArea() * areaSign
+
+    /**
+     * The position of particle [i]. Particles `0 until ringCount` are the outline, in order, and the
+     * one after them is the core ([isCore]). Nothing else about how they are stored is part of the interface.
+     */
+    fun positionX(i: Int): Float = x[i]
+
+    fun positionY(i: Int): Float = y[i]
+
+    /** How far particle [i] moved in x during the last substep: its velocity, in units per substep. */
+    fun movedX(i: Int): Float = x[i] - prevX[i]
+
+    fun movedY(i: Int): Float = y[i] - prevY[i]
+
+    /** Whether particle [i] is the core rather than a point on the outline. */
+    fun isCore(i: Int): Boolean = i == ringCount
+
+    /**
+     * Puts particle [i] at ([px], [py]) as if it had come from ([previousX], [previousY]), which gives
+     * it that much speed. By default it has come from where it is, so it is at rest.
+     */
+    fun setParticle(i: Int, px: Float, py: Float, previousX: Float = px, previousY: Float = py) {
+        x[i] = px
+        y[i] = py
+        prevX[i] = previousX
+        prevY[i] = previousY
+    }
+
+    /**
+     * Moves particle [i] out of a surface: [depth] units along the unit normal ([nx], [ny]) that points
+     * out of the solid, and removes the speed it had going into the surface while keeping the rest, so it
+     * slides along walls and floors.
+     */
+    fun pushOut(i: Int, nx: Float, ny: Float, depth: Float) {
+        var vx = x[i] - prevX[i]
+        var vy = y[i] - prevY[i]
+        x[i] += nx * depth
+        y[i] += ny * depth
+        val into = vx * nx + vy * ny
+        if (into < 0f) {
+            vx -= into * nx
+            vy -= into * ny
+        }
+        prevX[i] = x[i] - vx
+        prevY[i] = y[i] - vy
+    }
+
+    /** Multiplies every particle's horizontal speed by [factor], leaving positions and vertical speed alone. */
+    fun scaleVelocityX(factor: Float) {
+        for (i in 0 until size) prevX[i] = x[i] - (x[i] - prevX[i]) * factor
+    }
 
     /** Adds ([dx], [dy]) units per second to particle [i], for a substep of [h] seconds. */
     fun addVelocity(i: Int, dx: Float, dy: Float, h: Float) {

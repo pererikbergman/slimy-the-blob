@@ -81,7 +81,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
             }
         } else if (isGrounded) {
             val keep = 1f - GROUND_FRICTION
-            for (i in 0 until body.size) body.prevX[i] = body.x[i] - (body.x[i] - body.prevX[i]) * keep
+            body.scaleVelocityX(keep)
         }
 
         if (body.meanVelocityY(h) >= 0f) isJumpRising = false

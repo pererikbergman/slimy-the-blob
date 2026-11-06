@@ -98,8 +98,8 @@ class AcceptanceTest {
 
     private fun assertParticlesOutside(slime: Slime, grid: SolidGrid) {
         for (i in 0 until slime.body.size) {
-            val x = slime.body.x[i]
-            val y = slime.body.y[i]
+            val x = slime.body.positionX(i)
+            val y = slime.body.positionY(i)
             assertTrue(!grid.isSolidAt(x, y, margin = 0.05f), "particle $i is inside a solid at ($x, $y)")
         }
     }

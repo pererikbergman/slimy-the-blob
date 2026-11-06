@@ -10,17 +10,23 @@ import kotlin.math.sqrt
  * curtain pushes the particles out of its body, so the cloth swings, and settles again after.
  * The curtain does not push back on the slime.
  *
- * Particle `r * columns + c` is row `r` of strand `c`; row 0 is the pinned one.
+ * A particle is named by its row down the strand and its column across; row 0 is the pinned one.
  */
 class Curtain(val left: Float, val right: Float, val top: Float) {
     val columns: Int = ((right - left) / SolidGrid.TILE).roundToInt() + 1
     val rows: Int = ROWS
-    val count: Int = columns * rows
-    val x = FloatArray(count)
-    val y = FloatArray(count)
+    private val count: Int = columns * rows
+    private val x = FloatArray(count)
+    private val y = FloatArray(count)
     private val prevX = FloatArray(count)
     private val prevY = FloatArray(count)
     private val nearest = FloatArray(2)
+
+    /** The x of the particle in [row] of strand [column]. */
+    fun particleX(row: Int, column: Int): Float = x[row * columns + column]
+
+    /** The y of the particle in [row] of strand [column]. */
+    fun particleY(row: Int, column: Int): Float = y[row * columns + column]
 
     init {
         for (r in 0 until rows) for (c in 0 until columns) {

@@ -17,7 +17,7 @@ class CurtainTest {
 
     private fun Curtain.farthestFromRest(): Float {
         var worst = 0f
-        for (r in 0 until rows) for (c in 0 until columns) worst = maxOf(worst, abs(x[r * columns + c] - restX(c)))
+        for (r in 0 until rows) for (c in 0 until columns) worst = maxOf(worst, abs(particleX(r, c) - restX(c)))
         return worst
     }
 
@@ -27,8 +27,8 @@ class CurtainTest {
         repeat(300) { curtain.step(null, dt) }
         val length = (curtain.rows - 1) * Curtain.SEGMENT
         for (c in 0 until curtain.columns) {
-            assertTrue(abs(curtain.y[c] - top) < 0.001f, "anchor $c moved")
-            val tip = curtain.y[(curtain.rows - 1) * curtain.columns + c]
+            assertTrue(abs(curtain.particleY(0, c) - top) < 0.001f, "anchor $c moved")
+            val tip = curtain.particleY(curtain.rows - 1, c)
             assertTrue(abs(tip - (top + length)) < 3f, "strand $c ends at $tip, not ${top + length}")
         }
         assertTrue(curtain.farthestFromRest() < 0.5f)
@@ -43,7 +43,9 @@ class CurtainTest {
         // Centred on the second strand with its dome up through the strand's lower half.
         val slime = body(centerX = SolidGrid.TILE, baseY = top + tipRow * Curtain.SEGMENT + 2f)
         repeat(30) { curtain.step(slime, dt) }
-        for (i in curtain.columns until curtain.count) assertTrue(!Outline.contains(slime, curtain.x[i], curtain.y[i]), "particle $i is inside the slime")
+        for (r in 1 until curtain.rows) for (c in 0 until curtain.columns) {
+            assertTrue(!Outline.contains(slime, curtain.particleX(r, c), curtain.particleY(r, c)), "particle ($r, $c) is inside the slime")
+        }
         assertTrue(curtain.farthestFromRest() > 3f, "nothing moved, farthest ${curtain.farthestFromRest()}")
         assertTrue(curtain.isFinite())
     }

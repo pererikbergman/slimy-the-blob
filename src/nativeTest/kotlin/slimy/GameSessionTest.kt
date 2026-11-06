@@ -72,14 +72,14 @@ class GameSessionTest {
         var farthest = 0f
         repeat(30) {
             s.step(dt)
-            for (i in 0 until curtain.count) {
-                val restX = curtain.left + (i % curtain.columns) * SolidGrid.TILE
-                farthest = maxOf(farthest, abs(curtain.x[i] - restX))
+            for (r in 0 until curtain.rows) for (c in 0 until curtain.columns) {
+                val restX = curtain.left + c * SolidGrid.TILE
+                farthest = maxOf(farthest, abs(curtain.particleX(r, c) - restX))
             }
         }
         assertTrue(farthest > 3f, "the curtain was not pushed: farthest from rest $farthest")
-        for (i in curtain.columns until curtain.count) {
-            assertFalse(Outline.contains(s.slime.body, curtain.x[i], curtain.y[i]), "curtain particle $i ended up inside the slime")
+        for (r in 1 until curtain.rows) for (c in 0 until curtain.columns) {
+            assertFalse(Outline.contains(s.slime.body, curtain.particleX(r, c), curtain.particleY(r, c)), "curtain particle ($r, $c) ended up inside the slime")
         }
     }
 

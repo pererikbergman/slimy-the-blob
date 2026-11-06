@@ -112,8 +112,8 @@ class SolidGrid(val cols: Int, val rows: Int) {
     fun resolve(body: SoftBody, contacts: Contacts) {
         val tile = TILE
         for (i in 0 until body.size) {
-            val col = floor(body.x[i] / tile).toInt()
-            val row = floor(body.y[i] / tile).toInt()
+            val col = floor(body.positionX(i) / tile).toInt()
+            val row = floor(body.positionY(i) / tile).toInt()
             val solid = at(col, row)
             if (solid != null) push(body, i, solid, contacts)
             for (d in dynamic) push(body, i, d, contacts)
@@ -121,8 +121,8 @@ class SolidGrid(val cols: Int, val rows: Int) {
     }
 
     private fun push(body: SoftBody, i: Int, solid: Solid, contacts: Contacts) {
-        val px = body.x[i]
-        val py = body.y[i]
+        val px = body.positionX(i)
+        val py = body.positionY(i)
         if (!solid.contains(px, py)) return
         val exit = exitScratch
         when (solid.shape) {
@@ -130,23 +130,8 @@ class SolidGrid(val cols: Int, val rows: Int) {
             SolidShape.RISING -> exitFromRising(solid, px, py, exit)
             SolidShape.FALLING -> exitFromFalling(solid, px, py, exit)
         }
-        moveOut(body, i, exit)
+        body.pushOut(i, exit.nx, exit.ny, exit.depth)
         if (exit.ny < MIN_FLOOR_NORMAL_Y) contacts.recordFloor(i, solid.isBouncy)
-    }
-
-    /** Moves particle [i] out along [exit] and removes the speed it had going into the surface, keeping the rest. */
-    private fun moveOut(body: SoftBody, i: Int, exit: Exit) {
-        var vx = body.x[i] - body.prevX[i]
-        var vy = body.y[i] - body.prevY[i]
-        body.x[i] += exit.nx * exit.depth
-        body.y[i] += exit.ny * exit.depth
-        val into = vx * exit.nx + vy * exit.ny
-        if (into < 0f) {
-            vx -= into * exit.nx
-            vy -= into * exit.ny
-        }
-        body.prevX[i] = body.x[i] - vx
-        body.prevY[i] = body.y[i] - vy
     }
 
     /** Writes to [exit] the cheapest way out of the box for a point inside it. */

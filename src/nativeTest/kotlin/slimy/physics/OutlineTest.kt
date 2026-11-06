@@ -27,9 +27,10 @@ class OutlineTest {
         for (i in 0 until 4) {
             val a = 2 + i
             val c = 9 - i
-            val x = b.x[a]; val y = b.y[a]
-            b.x[a] = b.x[c]; b.y[a] = b.y[c]
-            b.x[c] = x; b.y[c] = y
+            val x = b.positionX(a)
+            val y = b.positionY(a)
+            b.setParticle(a, b.positionX(c), b.positionY(c))
+            b.setParticle(c, x, y)
         }
     }
 
