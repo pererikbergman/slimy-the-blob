@@ -87,6 +87,11 @@ class SolidGrid(val cols: Int, val rows: Int) {
         cells[solid.row * cols + solid.col] = solid
     }
 
+    /** Empties cell ([col], [row]). */
+    fun removeAt(col: Int, row: Int) {
+        if (col in 0 until cols && row in 0 until rows) cells[row * cols + col] = null
+    }
+
     /**
      * Pushes every particle of [body] out of the solids, along the way of least penetration. The
      * speed going into the surface is removed and the rest kept, so particles slide along walls and
@@ -113,18 +118,13 @@ class SolidGrid(val cols: Int, val rows: Int) {
         when (solid.shape) {
             SolidShape.BOX -> {
                 if (px <= solid.left || px >= solid.right || py <= solid.top || py >= solid.bottom) return
-                depth = Float.MAX_VALUE
-                nx = 0f
-                ny = 0f
-                val toLeft = px - solid.left
-                if (toLeft < depth && !isBuried(solid, Side.LEFT)) { depth = toLeft; nx = -1f; ny = 0f }
-                val toRight = solid.right - px
-                if (toRight < depth && !isBuried(solid, Side.RIGHT)) { depth = toRight; nx = 1f; ny = 0f }
-                val toTop = py - solid.top
-                if (toTop < depth && !isBuried(solid, Side.TOP)) { depth = toTop; nx = 0f; ny = -1f }
-                val toBottom = solid.bottom - py
-                if (toBottom < depth && !isBuried(solid, Side.BOTTOM)) { depth = toBottom; nx = 0f; ny = 1f }
-                if (depth == Float.MAX_VALUE) return
+                var exit = nearestExit(solid, px, py, respectBuried = true)
+                // Buried on every side, such as under the foot of a wall: step toward the nearest face
+                // anyway, just past it, and the tile there pushes the particle the rest of the way out.
+                if (exit.depth == Float.MAX_VALUE) exit = nearestExit(solid, px, py, respectBuried = false).also { it.depth += 0.01f }
+                depth = exit.depth
+                nx = exit.nx
+                ny = exit.ny
             }
             SolidShape.RISING -> {
                 val u = px - solid.left
@@ -160,6 +160,31 @@ class SolidGrid(val cols: Int, val rows: Int) {
             contacts.anyFloor = true
             if (solid.isBouncy) contacts.anyBounce = true
         }
+    }
+
+    /** The way out of a box that costs the least movement, reused between calls so nothing allocates. */
+    private class Exit {
+        var depth = Float.MAX_VALUE
+        var nx = 0f
+        var ny = 0f
+    }
+
+    private val exitScratch = Exit()
+
+    private fun nearestExit(solid: Solid, px: Float, py: Float, respectBuried: Boolean): Exit {
+        val exit = exitScratch
+        exit.depth = Float.MAX_VALUE
+        exit.nx = 0f
+        exit.ny = 0f
+        val toLeft = px - solid.left
+        if (toLeft < exit.depth && !(respectBuried && isBuried(solid, Side.LEFT))) { exit.depth = toLeft; exit.nx = -1f; exit.ny = 0f }
+        val toRight = solid.right - px
+        if (toRight < exit.depth && !(respectBuried && isBuried(solid, Side.RIGHT))) { exit.depth = toRight; exit.nx = 1f; exit.ny = 0f }
+        val toTop = py - solid.top
+        if (toTop < exit.depth && !(respectBuried && isBuried(solid, Side.TOP))) { exit.depth = toTop; exit.nx = 0f; exit.ny = -1f }
+        val toBottom = solid.bottom - py
+        if (toBottom < exit.depth && !(respectBuried && isBuried(solid, Side.BOTTOM))) { exit.depth = toBottom; exit.nx = 0f; exit.ny = 1f }
+        return exit
     }
 
     private enum class Side { LEFT, RIGHT, TOP, BOTTOM }

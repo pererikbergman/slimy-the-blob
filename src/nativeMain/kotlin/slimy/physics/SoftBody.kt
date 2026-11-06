@@ -12,6 +12,11 @@ import kotlin.math.sqrt
  * the core (they remember the shape and let it stretch), and an area constraint that keeps the
  * volume, so squashing the slime in one direction pushes it out in another.
  *
+ * The constraints are XPBD: each has a compliance, the inverse of a stiffness in real units, so a
+ * softer body stays softer however many passes run. The core is [coreMass] times heavier than a ring
+ * particle and stands for the slime's insides: when the outline is held, say on the rim of a gap,
+ * the core's weight drags the body through it.
+ *
  * Velocity is implicit: the difference between a particle's position and its previous position,
  * which is why [addVelocity] edits the previous position.
  */
@@ -20,6 +25,7 @@ class SoftBody private constructor(
     val ringCount: Int,
     private val restX: FloatArray,
     private val restY: FloatArray,
+    coreMass: Float,
 ) {
     /** Outline particles plus the core. */
     val size: Int = ringCount + 1
@@ -30,6 +36,10 @@ class SoftBody private constructor(
 
     private val edgeRest = FloatArray(ringCount)
     private val spokeRest = FloatArray(ringCount)
+    private val edgeLambda = FloatArray(ringCount)
+    private val spokeLambda = FloatArray(ringCount)
+    private var areaLambda = 0f
+    private val coreWeight = 1f / coreMass
     private val areaDx = FloatArray(ringCount)
     private val areaDy = FloatArray(ringCount)
     private val areaSign: Float
@@ -64,8 +74,14 @@ class SoftBody private constructor(
         }
     }
 
-    /** Verlet step of [h] seconds: keeps the velocity (damped), adds gravity, caps the move at [maxStep]. */
+    /**
+     * Starts a substep of [h] seconds: keeps every particle's velocity (damped), adds gravity, caps
+     * the move at [maxStep] and forgets the constraint forces of the substep before.
+     */
     fun integrate(gravity: Float, h: Float, damping: Float, maxStep: Float) {
+        edgeLambda.fill(0f)
+        spokeLambda.fill(0f)
+        areaLambda = 0f
         for (i in 0 until size) {
             var dx = (x[i] - prevX[i]) * damping
             var dy = (y[i] - prevY[i]) * damping + gravity * h * h
@@ -81,26 +97,38 @@ class SoftBody private constructor(
         }
     }
 
-    /** One pass over every constraint. Stiffnesses are the share of each error corrected, 0 to 1. */
-    fun relax(edgeStiffness: Float, spokeStiffness: Float, areaStiffness: Float) {
-        for (i in 0 until ringCount) pull(i, (i + 1) % ringCount, edgeRest[i], edgeStiffness)
-        for (i in 0 until ringCount) pull(i, ringCount, spokeRest[i], spokeStiffness)
-        keepArea(areaStiffness)
+    /**
+     * One pass over every constraint of the substep of [h] seconds that [integrate] began. A
+     * compliance is how far a constraint gives per unit of force; 0 is rigid.
+     */
+    fun relax(h: Float, edgeCompliance: Float, spokeCompliance: Float, areaCompliance: Float) {
+        val edgeSoftness = edgeCompliance / (h * h)
+        val spokeSoftness = spokeCompliance / (h * h)
+        for (i in 0 until ringCount) pull(i, (i + 1) % ringCount, edgeRest[i], edgeSoftness, edgeLambda, i)
+        for (i in 0 until ringCount) pull(i, ringCount, spokeRest[i], spokeSoftness, spokeLambda, i)
+        keepArea(areaCompliance / (h * h))
     }
 
-    private fun pull(a: Int, b: Int, rest: Float, stiffness: Float) {
-        val dx = x[b] - x[a]
-        val dy = y[b] - y[a]
+    private fun weight(i: Int): Float = if (i == ringCount) coreWeight else 1f
+
+    private fun pull(a: Int, b: Int, rest: Float, softness: Float, lambda: FloatArray, index: Int) {
+        val dx = x[a] - x[b]
+        val dy = y[a] - y[b]
         val length = sqrt(dx * dx + dy * dy)
         if (length < 1e-6f) return
-        val correction = stiffness * (length - rest) / length * 0.5f
-        x[a] += dx * correction
-        y[a] += dy * correction
-        x[b] -= dx * correction
-        y[b] -= dy * correction
+        val wa = weight(a)
+        val wb = weight(b)
+        val change = (-(length - rest) - softness * lambda[index]) / (wa + wb + softness)
+        lambda[index] += change
+        val nx = dx / length
+        val ny = dy / length
+        x[a] += wa * change * nx
+        y[a] += wa * change * ny
+        x[b] -= wb * change * nx
+        y[b] -= wb * change * ny
     }
 
-    private fun keepArea(stiffness: Float) {
+    private fun keepArea(softness: Float) {
         val error = area() - restArea
         var gradientSquared = 0f
         for (i in 0 until ringCount) {
@@ -108,12 +136,12 @@ class SoftBody private constructor(
             val gy = gradientY(i)
             gradientSquared += gx * gx + gy * gy
         }
-        if (gradientSquared < 1e-6f) return
-        val scale = -stiffness * error / gradientSquared
+        val change = (-error - softness * areaLambda) / (gradientSquared + softness)
+        areaLambda += change
         // Every correction is worked out before any particle moves, so the order does not matter.
         for (i in 0 until ringCount) {
-            areaDx[i] = gradientX(i) * scale
-            areaDy[i] = gradientY(i) * scale
+            areaDx[i] = gradientX(i) * change
+            areaDy[i] = gradientY(i) * change
         }
         for (i in 0 until ringCount) {
             x[i] += areaDx[i]
@@ -215,7 +243,7 @@ class SoftBody private constructor(
          * right, then [baseSegments] along the flat base back to the left, with the core where the
          * half-disc's centre of mass is. The base lies on y = 0 and the middle on x = 0; y grows down.
          */
-        fun semiDisc(radius: Float, arcSegments: Int, baseSegments: Int): SoftBody {
+        fun semiDisc(radius: Float, arcSegments: Int, baseSegments: Int, coreMass: Float = Tuning.CORE_MASS): SoftBody {
             val ring = arcSegments + baseSegments
             val xs = FloatArray(ring + 1)
             val ys = FloatArray(ring + 1)
@@ -230,7 +258,7 @@ class SoftBody private constructor(
             }
             xs[ring] = 0f
             ys[ring] = -4f * radius / (3f * PI.toFloat())
-            return SoftBody(ring, xs, ys)
+            return SoftBody(ring, xs, ys, coreMass)
         }
     }
 }

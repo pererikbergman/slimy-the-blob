@@ -92,12 +92,12 @@ Tests first, in `SlimeTest`, on a 40×20 grid with a floor:
 
 ### Task 5: Acceptance tests (PRD §4) and tuning
 In `AcceptanceTest`, geometry built from `SolidGrid`:
-- [ ] **Deformation stability:** slime dropped into a 1-tile shaft for 1200 steps stays finite, inside the shaft walls, and no ring edge exceeds 3× its rest length
-- [ ] **Squeeze success (vertical):** slime above a 16-wide, 15-tile-deep shaft reaches the open chamber below; after 300 resting steps its width and area are within 15% of rest
-- [ ] **Squeeze success (horizontal):** slime pushed right under a tunnel with 8 units of clearance comes out the far side; shape within 15% of rest afterwards
-- [ ] **No clipping:** slime falling 430 units onto a floor never has a ring particle below the floor top on any step; same when landing half on a tile corner, no particle ends inside the block
-- [ ] If a squeeze test fails, tune in this order and re-run: lower `SPOKE_STIFFNESS`, raise `PRESSURE`, raise `RELAX_ITERATIONS`, raise `MOVE_ACCEL`. Record the final numbers in Tuning's KDoc
-- [ ] Commit: "Cover the PRD acceptance criteria with tests"
+- [x] **Deformation stability:** slime dropped into a 1-tile shaft for 1200 steps stays finite, inside the shaft walls, and no ring edge exceeds 3× its rest length
+- [x] **Squeeze success (vertical):** slime above a 16-wide, 15-tile-deep shaft reaches the open chamber below; after 300 resting steps its width and area are within 15% of rest
+- [x] **Squeeze success (horizontal):** slime pushed right under a tunnel with 8 units of clearance comes out the far side; shape within 15% of rest afterwards
+- [x] **No clipping:** slime falling 430 units onto a floor never has a ring particle below the floor top on any step; same when landing half on a tile corner, no particle ends inside the block
+- [x] If a squeeze test fails, tune in this order and re-run: lower `SPOKE_STIFFNESS`, raise `PRESSURE`, raise `RELAX_ITERATIONS`, raise `MOVE_ACCEL`. Record the final numbers in Tuning's KDoc
+- [x] Commit: "Cover the PRD acceptance criteria with tests"
 
 ### Task 6: Level parser (TDD)
 - [ ] Tests: `LevelMap.rows()` has equal-length rows; a 6×4 sample map parses `#`, `v` (bottom at tile top + 8), `/`, `\`, `J` (bouncy), `S`, `1`, `M` into the right solids, start, zone and crusher; ragged rows throw; `#` with air above gets the grass-top tile index, otherwise fill

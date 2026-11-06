@@ -85,7 +85,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
             contacts.beginSubstep()
             body.integrate(gravity, h, Tuning.DAMPING, Tuning.MAX_STEP)
             repeat(Tuning.RELAX_ITERATIONS) {
-                body.relax(Tuning.EDGE_STIFFNESS, Tuning.SPOKE_STIFFNESS, Tuning.AREA_STIFFNESS)
+                body.relax(h, Tuning.EDGE_COMPLIANCE, Tuning.SPOKE_COMPLIANCE, Tuning.AREA_COMPLIANCE)
                 grid.resolve(body, contacts)
             }
         }

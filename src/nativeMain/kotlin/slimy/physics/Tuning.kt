@@ -29,14 +29,28 @@ object Tuning {
     /** Share of velocity kept each substep. */
     const val DAMPING = 0.999f
 
-    /** How hard ring edges, spokes to the core and the area constraint pull back to rest, per pass (0..1). */
-    const val EDGE_STIFFNESS = 0.9f
-    const val SPOKE_STIFFNESS = 0.12f
-    const val AREA_STIFFNESS = 0.6f
+    /**
+     * How far each kind of constraint gives per unit of force (compliance, 0 is rigid): the ring
+     * edges, the spokes to the core and the area. Soft spokes let the slime stretch and squash,
+     * a soft area lets it sag and be squeezed, stiff edges keep the outline from tearing. These came
+     * from running AcceptanceTest over a grid of values: spokes much softer and the slime flattens
+     * under its own core and does not spring back; much stiffer and it perches on the rim of a shaft
+     * narrower than itself instead of falling in.
+     */
+    const val EDGE_COMPLIANCE = 0.00002f
+    const val SPOKE_COMPLIANCE = 0.0005f
+    const val AREA_COMPLIANCE = 0.001f
 
-    /** Horizontal acceleration on the ground and in the air, and the speed input cannot push past. */
-    const val MOVE_ACCEL = 900f
-    const val AIR_ACCEL = 500f
+    /** How many times heavier than an outline particle the core is. It stands for the slime's insides. */
+    const val CORE_MASS = 10f
+
+    /**
+     * Horizontal acceleration on the ground and in the air, and the speed input cannot push past.
+     * The ground value is also what shoves the slime through a gap narrower than itself: below about
+     * 1000 it stalls at the mouth of an 8-unit tunnel, from 1400 up it gets through (see AcceptanceTest).
+     */
+    const val MOVE_ACCEL = 1800f
+    const val AIR_ACCEL = 1000f
     const val MAX_SPEED = 170f
 
     /** Share of horizontal speed lost per step on the ground with no input. */

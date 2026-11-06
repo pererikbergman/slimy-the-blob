@@ -47,7 +47,7 @@ class SoftBodyTest {
         for (i in 0 until b.size) b.y[i] = b.y[i] * 0.5f
         for (i in 0 until b.size) b.prevY[i] = b.y[i]
         assertTrue(b.area() < rest * 0.6f)
-        repeat(60) { b.relax(Tuning.EDGE_STIFFNESS, Tuning.SPOKE_STIFFNESS, Tuning.AREA_STIFFNESS) }
+        repeat(60) { b.relax(h, Tuning.EDGE_COMPLIANCE, Tuning.SPOKE_COMPLIANCE, Tuning.AREA_COMPLIANCE) }
         assertTrue(b.isFinite())
         assertTrue(b.area() > rest * 0.85f, "area ${b.area()} of $rest")
     }
@@ -57,7 +57,7 @@ class SoftBodyTest {
         val b = body()
         b.placeAt(0f, 0f)
         val rest = b.area()
-        repeat(20) { b.relax(Tuning.EDGE_STIFFNESS, Tuning.SPOKE_STIFFNESS, Tuning.AREA_STIFFNESS) }
+        repeat(20) { b.relax(h, Tuning.EDGE_COMPLIANCE, Tuning.SPOKE_COMPLIANCE, Tuning.AREA_COMPLIANCE) }
         assertTrue(abs(b.area() - rest) < rest * 0.01f)
         assertEquals(1f, b.maxEdgeStretch(), 0.01f)
     }
