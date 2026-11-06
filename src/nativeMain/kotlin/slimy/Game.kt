@@ -19,9 +19,6 @@ import klyph.text.Text
 import klyph.text.TextAlign
 import klyph.text.TextShadow
 import slimy.level.TestLevel
-import slimy.physics.Curtain
-import slimy.physics.Slime
-import slimy.physics.SlimeInput
 import slimy.physics.SolidGrid
 import slimy.render.CurtainPainter
 import slimy.render.SlimePainter
@@ -79,62 +76,53 @@ fun App.installGame() {
     level.finish?.let { sign(it.x, it.y, "FINISH", Color(0xFFD36BFFu)) }
 
     val sky = assets.texture("bg.png", SamplerFilter.NEAREST).asRegion()
-    val slime = Slime(level.grid, start.x, start.y)
+    val session = GameSession(level)
+    val slime = session.slime
     val painter = SlimePainter(assets.whitePixel, assets.texture("face.png", SamplerFilter.NEAREST).asRegion())
-    val input = SlimeInput()
 
     // Curtains of red slime that the player can push through.
-    val curtains = level.curtains.map { Curtain(it.left, it.right, it.top) }
     val curtainPainter = CurtainPainter(assets.whitePixel, assets.disc(9), assets.disc(12))
 
     camera.zoom = ZOOM
     camera.bounds = Rect(x = 0f, y = 0f, width = level.width, height = level.height)
 
     fun restartInZone(id: Char?) {
-        val zone = id?.let { level.zone(it) }
-        if (zone != null) slime.reset(zone.x + 24f, zone.y) else slime.reset(start.x, start.y)
+        session.restartInZone(id)
         camera.lookAt(slime.body.centerX(), slime.body.centerY())
     }
     restartInZone(Sdl.environmentVariable("SLIME_ZONE")?.firstOrNull()?.uppercaseChar())
 
     val isAutopilot = Sdl.environmentVariable("KLYPH_AUTOPILOT") == "1"
     var showParticles = false
-    var jumpWaiting = false
     var autopilotSteps = 0
 
     addSystem(Phase.INPUT) { app ->
         val keyboard = app.input.keyboard
         if (keyboard.isJustPressed(Scancode.ESCAPE)) app.quit()
         if (keyboard.isJustPressed(Scancode.F2)) showParticles = !showParticles
-        if (keyboard.isJustPressed(Scancode.R)) restartInZone(level.zoneAt(slime.body.centerX())?.id)
+        if (keyboard.isJustPressed(Scancode.R)) restartInZone(session.zone?.id)
         if (keyboard.isJustPressed(Scancode.DIGIT_1)) restartInZone('A')
         if (keyboard.isJustPressed(Scancode.DIGIT_2)) restartInZone('B')
         if (keyboard.isJustPressed(Scancode.DIGIT_3)) restartInZone('C')
         if (keyboard.isJustPressed(Scancode.DIGIT_4)) restartInZone('D')
 
-        input.move = (keyboard.axis(Scancode.LEFT, Scancode.RIGHT) + keyboard.axis(Scancode.A, Scancode.D)).coerceIn(-1f, 1f)
-        input.jumpHeld = keyboard.isDown(Scancode.SPACE) || keyboard.isDown(Scancode.UP) || keyboard.isDown(Scancode.W)
-        // A press is kept until a fixed step has seen it, since a frame may run no step at all.
+        session.setMove((keyboard.axis(Scancode.LEFT, Scancode.RIGHT) + keyboard.axis(Scancode.A, Scancode.D)).coerceIn(-1f, 1f))
+        session.setJumpHeld(keyboard.isDown(Scancode.SPACE) || keyboard.isDown(Scancode.UP) || keyboard.isDown(Scancode.W))
         if (keyboard.isJustPressed(Scancode.SPACE) || keyboard.isJustPressed(Scancode.UP) || keyboard.isJustPressed(Scancode.W)) {
-            jumpWaiting = true
+            session.pressJump()
         }
     }
 
     addSystem(Phase.FIXED_UPDATE) { app ->
-        val dt = app.time.deltaSeconds
         if (isAutopilot) {
             // Runs right and hops every 1.2 seconds, holding jump, which is enough to see each zone.
             autopilotSteps++
-            input.move = 1f
-            input.jumpHeld = true
-            if (slime.isGrounded && autopilotSteps % 72 == 0) jumpWaiting = true
+            session.setMove(1f)
+            session.setJumpHeld(true)
+            if (slime.isGrounded && autopilotSteps % 72 == 0) session.pressJump()
         }
-        input.jumpPressed = jumpWaiting
-        jumpWaiting = false
-        level.advance(dt)
-        slime.step(input, dt)
-        for (curtain in curtains) curtain.step(slime.body, dt)
-        if (slime.body.centerY() > level.height + 4 * tile) restartInZone(level.zoneAt(slime.body.centerX())?.id)
+        // A slime that fell out of the level was put back; the camera goes with it rather than gliding there.
+        if (session.step(app.time.deltaSeconds)) app.camera.lookAt(slime.body.centerX(), slime.body.centerY())
     }
 
     addSystem(Phase.UPDATE) {
@@ -167,15 +155,14 @@ fun App.installGame() {
             )
         }
 
-        for (curtain in curtains) curtainPainter.paint(canvas, curtain)
+        for (curtain in session.curtains) curtainPainter.paint(canvas, curtain)
         painter.paint(canvas, slime, showParticles)
 
-        val zone = level.zoneAt(slime.body.centerX())
+        val zone = session.zone
         if (zone != null) canvas.drawText(font, "ZONE ${zone.id}: ${zone.name}", x = 16f, y = 14f, scale = 3f, layer = 1, shadow = shadow)
         canvas.drawText(font, "A/D or arrows: move   Space/W/Up: jump   Esc: quit", x = 16f, y = app.window.height - 56f, scale = 2f, layer = 1, shadow = shadow)
         canvas.drawText(font, "1-4: go to zone   R: restart zone   F2: particles   F3: stats", x = 16f, y = app.window.height - 32f, scale = 2f, layer = 1, shadow = shadow)
-        val finish = level.finish
-        if (finish != null && slime.body.centerX() > finish.x) {
+        if (session.isFinished) {
             canvas.drawText(font, "LEVEL COMPLETE", x = app.window.width / 2f, y = app.window.height / 2f - 24f, scale = 6f, align = TextAlign.CENTER, layer = 2, shadow = shadow)
         }
     }

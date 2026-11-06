@@ -1,11 +1,12 @@
 package slimy.level
 
+import slimy.GameSession
 import slimy.physics.Slime
-import slimy.physics.SlimeInput
 import slimy.physics.SolidGrid
 import slimy.physics.SolidShape
 import kotlin.math.floor
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -24,24 +25,26 @@ class PlaythroughTest {
         return solid.shape != SolidShape.BOX || (y >= solid.top && y <= solid.bottom)
     }
 
-    /** Runs from the sign of [zone], 24 units in, until the slime's middle passes [targetCol] or [maxSteps] pass; returns where it got to. */
+    /** Runs from the sign of [zone] until the slime's middle passes [targetCol] or [maxSteps] pass; returns where it got to. */
     private fun play(zone: Char, targetCol: Int, maxSteps: Int = 3000): Slime {
-        val sign = checkNotNull(level.zone(zone))
-        return playFrom(Slime(level.grid, sign.x + 24f, sign.y), zone, targetCol, maxSteps)
+        val session = GameSession(level)
+        session.restartInZone(zone)
+        return playFrom(session, zone, targetCol, maxSteps)
     }
 
-    /** Runs the bot with [slime] where it already is, until it passes [targetCol] or [maxSteps] pass. */
-    private fun playFrom(slime: Slime, zone: Char, targetCol: Int, maxSteps: Int = 3000): Slime {
-        val input = SlimeInput(move = 1f, jumpHeld = true)
+    /** Runs the bot on [session] where its slime already is, until it passes [targetCol] or [maxSteps] pass. */
+    private fun playFrom(session: GameSession, zone: Char, targetCol: Int, maxSteps: Int = 3000): Slime {
+        val slime = session.slime
+        session.setMove(1f)
+        session.setJumpHeld(true)
         var step = 0
         while (step < maxSteps && slime.body.centerX() < targetCol * tile) {
             val front = slime.body.maxX()
             val feet = slime.body.maxY()
             val wallAhead = solidAt(level.grid, front + 4f, feet - 6f)
             val groundEnds = !solidAt(level.grid, front + 6f, feet + 6f) && !solidAt(level.grid, front + 6f, feet + 22f)
-            input.jumpPressed = slime.isGrounded && (wallAhead || groundEnds)
-            level.advance(dt)
-            slime.step(input, dt)
+            if (slime.isGrounded && (wallAhead || groundEnds)) session.pressJump()
+            assertFalse(session.step(dt), "zone $zone: the slime fell out of the level at column ${slime.body.centerX() / tile}")
             assertTrue(slime.body.isFinite(), "the body blew up at step $step in zone $zone")
             step++
         }
@@ -69,21 +72,22 @@ class PlaythroughTest {
         val shaftMiddle = 146.5f * tile
         val deckTop = 16f * tile
         // A hop's height above the rim: it lands with nothing pushing it and must go down under its own weight.
-        val slime = Slime(level.grid, shaftMiddle, deckTop - 24f)
+        val session = GameSession(level)
+        session.slime.reset(shaftMiddle, deckTop - 24f)
         var step = 0
-        while (step < 900 && slime.body.centerY() < 18f * tile) {
-            level.advance(dt)
-            slime.step(SlimeInput(), dt)
+        while (step < 900 && session.slime.body.centerY() < 18f * tile) {
+            session.step(dt)
             step++
         }
-        assertTrue(slime.body.centerY() >= 18f * tile, "still on the deck after $step steps, at y ${slime.body.centerY()}")
-        assertTrue(slime.body.isFinite())
+        assertTrue(session.slime.body.centerY() >= 18f * tile, "still on the deck after $step steps, at y ${session.slime.body.centerY()}")
+        assertTrue(session.slime.body.isFinite())
     }
 
     @Test
     fun theCorridorUnderTheDeckLeadsOutOfZoneC() {
-        val slime = Slime(level.grid, 146.5f * tile, 20f * tile)
-        assertReached(playFrom(slime, 'C', 157), 157, 'C')
+        val session = GameSession(level)
+        session.slime.reset(146.5f * tile, 20f * tile)
+        assertReached(playFrom(session, 'C', 157), 157, 'C')
     }
 
     @Test
