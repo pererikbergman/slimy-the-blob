@@ -54,31 +54,31 @@
 ## Tasks
 
 ### Task 1: Test wiring and Tuning
-- [ ] Add `kotlin("test")` to `nativeTest` in `build.gradle.kts`
-- [ ] Create `Tuning.kt` with the constants listed above and KDoc on each saying what it does in game terms
-- [ ] Write one smoke test that reads a Tuning constant; run `./gradlew allTests` and confirm the test task exists and passes
-- [ ] Commit: "Wire up native tests and physics tuning"
+- [x] Add `kotlin("test")` to `nativeTest` in `build.gradle.kts`
+- [x] Create `Tuning.kt` with the constants listed above and KDoc on each saying what it does in game terms
+- [x] Write one smoke test that reads a Tuning constant; run `./gradlew allTests` and confirm the test task exists and passes
+- [x] Commit: "Wire up native tests and physics tuning"
 
 ### Task 2: SoftBody (TDD)
 Tests first, in `SoftBodyTest`:
-- [ ] `semiDisc(radius, arcCount, baseCount)` yields `arcCount + baseCount` points, width `2r`, height `r`
-- [ ] `placeAt(x, y)` puts the ring centroid there with zero velocity
-- [ ] `integrate` with gravity moves every particle down; the per-substep step is capped at `maxStep`
-- [ ] `relax` on a shape squashed to half height restores ≥85% of the rest area within 60 passes and stays finite
-- [ ] Implement: particle arrays (`x`, `y`, `prevX`, `prevY`), rest edge/spoke lengths, rest area, winding sign for outward normals, `integrate`, `relax` (edges, spokes, pressure), `area`, `centroidX/Y`, `min/max X/Y`, `edgeLength`, `isFinite`, `addVelocity`, `setVelocityY`
-- [ ] Commit: "Add Verlet soft body with pressure"
+- [x] `semiDisc(radius, arcCount, baseCount)` yields `arcCount + baseCount` points, width `2r`, height `r`
+- [x] `placeAt(x, y)` puts the ring centroid there with zero velocity
+- [x] `integrate` with gravity moves every particle down; the per-substep step is capped at `maxStep`
+- [x] `relax` on a shape squashed to half height restores ≥85% of the rest area within 60 passes and stays finite
+- [x] Implement: particle arrays (`x`, `y`, `prevX`, `prevY`), rest edge/spoke lengths, rest area, winding sign for outward normals, `integrate`, `relax` (edges, spokes, pressure), `area`, `centroidX/Y`, `min/max X/Y`, `edgeLength`, `isFinite`, `addVelocity`, `setVelocityY`
+- [x] Commit: "Add Verlet soft body with pressure"
 
 ### Task 3: Solids and collision (TDD)
 Tests first, in `SolidsTest`, each placing one particle with a known previous position:
-- [ ] Particle entering a block from above lands on its top, gets a floor contact, keeps its horizontal velocity, loses its vertical one
-- [ ] From the side: pushed out sideways, no floor contact
-- [ ] Particle that started inside is pushed out through the nearest face
-- [ ] Outside particle untouched
-- [ ] Bouncy block sets the bouncy contact flag
-- [ ] `/` slope pushes along its up-left normal onto the surface; `\` mirrors it
-- [ ] A dynamic solid (not in a cell) is checked too
-- [ ] Implement `Block`, `Slope`, `SolidGrid` (cells + `dynamic`, `block()`, `fillBlocks()`, bounds-safe `get`), `Contacts`, `collide(body, grid, contacts)` that visits the 3×3 cells around each particle. Push-out removes only the inward normal velocity so particles slide along walls
-- [ ] Commit: "Add tile solids and particle push-out"
+- [x] Particle entering a block from above lands on its top, gets a floor contact, keeps its horizontal velocity, loses its vertical one
+- [x] From the side: pushed out sideways, no floor contact
+- [x] Particle that started inside is pushed out through the nearest face
+- [x] Outside particle untouched
+- [x] Bouncy block sets the bouncy contact flag
+- [x] `/` slope pushes along its up-left normal onto the surface; `\` mirrors it
+- [x] A dynamic solid (not in a cell) is checked too
+- [x] Implement `Block`, `Slope`, `SolidGrid` (cells + `dynamic`, `block()`, `fillBlocks()`, bounds-safe `get`), `Contacts`, `collide(body, grid, contacts)` that visits the 3×3 cells around each particle. Push-out removes only the inward normal velocity so particles slide along walls
+- [x] Commit: "Add tile solids and particle push-out"
 
 ### Task 4: Slime controller (TDD)
 Tests first, in `SlimeTest`, on a 40×20 grid with a floor:
