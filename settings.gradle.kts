@@ -11,4 +11,4 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "klyph-test"
+rootProject.name = "slimy-the-blob"

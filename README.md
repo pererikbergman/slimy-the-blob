@@ -1,4 +1,4 @@
-# My game
+# Slimy the Blob
 
 A starting point for a game made with [klyph](https://github.com/inemtsev/klyph), a 2D game engine
 in Kotlin/Native on SDL3. It opens a window with a ship in the middle that flies with the arrow
@@ -27,7 +27,7 @@ frames, and `-Pklyph.screenshot=30:shot.png` saves frame 30 as a PNG.
 | Path | Contents |
 |---|---|
 | `build.gradle.kts` | The klyph plugin, the entry point and the engine dependency. |
-| `src/nativeMain/kotlin/mygame/Main.kt` | The game. |
+| `src/nativeMain/kotlin/slimy/Main.kt` | The game. |
 | `assets/` | Art and sounds, copied next to the executable. |
 | `.github/workflows/build.yml` | Links the game on macOS, Linux and Windows on every push. |
 

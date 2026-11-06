@@ -1,4 +1,4 @@
-package mygame
+package slimy
 
 import klyph.app.AppConfig
 import klyph.app.Phase
@@ -24,7 +24,7 @@ private const val SHIP_SPEED = 200f
  * stops after 60 frames and `-Pklyph.screenshot=30:shot.png` saves frame 30.
  */
 fun main() {
-    val config = AppConfig.fromEnvironment(AppConfig(title = "My game", width = 1280, height = 720))
+    val config = AppConfig.fromEnvironment(AppConfig(title = "Slimy the Blob", width = 1280, height = 720))
     runApp(config) {
         // World (0, 0) is the window's top-left corner, so this is the middle of the window.
         val ship = world.create()
