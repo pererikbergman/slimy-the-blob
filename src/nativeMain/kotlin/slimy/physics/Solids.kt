@@ -4,6 +4,12 @@ import kotlin.math.floor
 
 private const val DIAGONAL = 0.70710678f
 
+/**
+ * A surface whose normal points up by more than this (y grows down, so the normal's y is below it)
+ * counts as a floor. A 45 degree slope's normal is at -0.707, so a slime standing on one is grounded.
+ */
+private const val MIN_FLOOR_NORMAL_Y = -0.5f
+
 /** How a [Solid] fills its rectangle: all of it, or the half under a diagonal surface. */
 enum class SolidShape {
     /** The whole rectangle. */
@@ -19,9 +25,9 @@ enum class SolidShape {
 /**
  * Something the slime cannot enter: a rectangle with the given edges (y grows down) filled as
  * [shape] says. A tile's solid knows its grid cell, so the grid can tell which faces are buried
- * against a neighbour; a moving solid has none. A bouncy one throws the slime back up.
+ * against a neighbour; a [moving] one has none. A bouncy one throws the slime back up.
  */
-class Solid(
+class Solid private constructor(
     val shape: SolidShape,
     val left: Float,
     var top: Float,
@@ -31,7 +37,13 @@ class Solid(
     val col: Int = -1,
     val row: Int = -1,
 ) {
+    /** Whether this solid moves, such as a crusher, rather than filling a grid cell. It has no neighbours to bury its faces against. */
+    val isMoving: Boolean get() = col < 0
+
     companion object {
+        /** A solid that is not tied to a grid cell, filling the given edges; its [top] and [bottom] may change. */
+        fun moving(left: Float, top: Float, right: Float, bottom: Float): Solid = Solid(SolidShape.BOX, left, top, right, bottom)
+
         /** The solid filling grid cell ([col], [row]) as [shape]. */
         fun tile(col: Int, row: Int, shape: SolidShape = SolidShape.BOX, isBouncy: Boolean = false): Solid {
             val t = SolidGrid.TILE
@@ -90,52 +102,66 @@ class SolidGrid(val cols: Int, val rows: Int) {
     private fun push(body: SoftBody, i: Int, solid: Solid, contacts: Contacts) {
         val px = body.x[i]
         val py = body.y[i]
-        var nx: Float
-        var ny: Float
-        var depth: Float
-        when (solid.shape) {
-            SolidShape.BOX -> {
-                if (px <= solid.left || px >= solid.right || py <= solid.top || py >= solid.bottom) return
-                var exit = nearestExit(solid, px, py, respectBuried = true)
-                // Buried on every side, such as under the foot of a wall: step toward the nearest face
-                // anyway, just past it, and the tile there pushes the particle the rest of the way out.
-                if (exit.depth == Float.MAX_VALUE) exit = nearestExit(solid, px, py, respectBuried = false).also { it.depth += 0.01f }
-                depth = exit.depth
-                nx = exit.nx
-                ny = exit.ny
-            }
-            SolidShape.RISING -> {
-                val u = px - solid.left
-                val v = solid.bottom - py
-                if (u <= v) return
-                depth = (u - v) * DIAGONAL
-                nx = -DIAGONAL
-                ny = -DIAGONAL
-            }
-            SolidShape.FALLING -> {
-                val u = px - solid.left
-                val v = solid.bottom - py
-                val side = solid.right - solid.left
-                if (u + v >= side) return
-                depth = (side - u - v) * DIAGONAL
-                nx = DIAGONAL
-                ny = -DIAGONAL
-            }
+        val exit = exitScratch
+        val isInside = when (solid.shape) {
+            SolidShape.BOX -> exitFromBox(solid, px, py, exit)
+            SolidShape.RISING -> exitFromRising(solid, px, py, exit)
+            SolidShape.FALLING -> exitFromFalling(solid, px, py, exit)
         }
-        var vx = px - body.prevX[i]
-        var vy = py - body.prevY[i]
-        body.x[i] = px + nx * depth
-        body.y[i] = py + ny * depth
-        val into = vx * nx + vy * ny
+        if (!isInside) return
+        moveOut(body, i, exit)
+        if (exit.ny < MIN_FLOOR_NORMAL_Y) contacts.recordFloor(i, solid.isBouncy)
+    }
+
+    /** Moves particle [i] out along [exit] and removes the speed it had going into the surface, keeping the rest. */
+    private fun moveOut(body: SoftBody, i: Int, exit: Exit) {
+        var vx = body.x[i] - body.prevX[i]
+        var vy = body.y[i] - body.prevY[i]
+        body.x[i] += exit.nx * exit.depth
+        body.y[i] += exit.ny * exit.depth
+        val into = vx * exit.nx + vy * exit.ny
         if (into < 0f) {
-            vx -= into * nx
-            vy -= into * ny
+            vx -= into * exit.nx
+            vy -= into * exit.ny
         }
         body.prevX[i] = body.x[i] - vx
         body.prevY[i] = body.y[i] - vy
-        if (ny < -0.5f) {
-            contacts.recordFloor(i, solid.isBouncy)
+    }
+
+    /** If the point is inside the box, writes the cheapest way out to [exit] and returns `true`. */
+    private fun exitFromBox(solid: Solid, px: Float, py: Float, exit: Exit): Boolean {
+        if (px <= solid.left || px >= solid.right || py <= solid.top || py >= solid.bottom) return false
+        nearestExit(solid, px, py, respectBuried = true)
+        // Buried on every side, such as under the foot of a wall: step toward the nearest face
+        // anyway, just past it, and the tile there pushes the particle the rest of the way out.
+        if (exit.depth == Float.MAX_VALUE) {
+            nearestExit(solid, px, py, respectBuried = false)
+            exit.depth += 0.01f
         }
+        return true
+    }
+
+    /** If the point is under a surface that rises to the right, writes the way out, along the surface's normal, and returns `true`. */
+    private fun exitFromRising(solid: Solid, px: Float, py: Float, exit: Exit): Boolean {
+        val u = px - solid.left
+        val v = solid.bottom - py
+        if (u <= v) return false
+        exit.depth = (u - v) * DIAGONAL
+        exit.nx = -DIAGONAL
+        exit.ny = -DIAGONAL
+        return true
+    }
+
+    /** If the point is under a surface that falls to the right, writes the way out, along the surface's normal, and returns `true`. */
+    private fun exitFromFalling(solid: Solid, px: Float, py: Float, exit: Exit): Boolean {
+        val u = px - solid.left
+        val v = solid.bottom - py
+        val side = solid.right - solid.left
+        if (u + v >= side) return false
+        exit.depth = (side - u - v) * DIAGONAL
+        exit.nx = DIAGONAL
+        exit.ny = -DIAGONAL
+        return true
     }
 
     /** The way out of a box that costs the least movement, reused between calls so nothing allocates. */
@@ -147,7 +173,8 @@ class SolidGrid(val cols: Int, val rows: Int) {
 
     private val exitScratch = Exit()
 
-    private fun nearestExit(solid: Solid, px: Float, py: Float, respectBuried: Boolean): Exit {
+    /** Writes to the scratch [Exit] the face of a box that is cheapest to leave through, skipping buried faces when asked. */
+    private fun nearestExit(solid: Solid, px: Float, py: Float, respectBuried: Boolean) {
         val exit = exitScratch
         exit.depth = Float.MAX_VALUE
         exit.nx = 0f
@@ -160,14 +187,13 @@ class SolidGrid(val cols: Int, val rows: Int) {
         if (toTop < exit.depth && !(respectBuried && isBuried(solid, Side.TOP))) { exit.depth = toTop; exit.nx = 0f; exit.ny = -1f }
         val toBottom = solid.bottom - py
         if (toBottom < exit.depth && !(respectBuried && isBuried(solid, Side.BOTTOM))) { exit.depth = toBottom; exit.nx = 0f; exit.ny = 1f }
-        return exit
     }
 
     private enum class Side { LEFT, RIGHT, TOP, BOTTOM }
 
     /** Whether the [side] face of a tile's [solid] lies against a neighbour that fills the whole face. */
     private fun isBuried(solid: Solid, side: Side): Boolean {
-        if (solid.col < 0) return false
+        if (solid.isMoving) return false
         val neighbour = when (side) {
             Side.LEFT -> at(solid.col - 1, solid.row)
             Side.RIGHT -> at(solid.col + 1, solid.row)

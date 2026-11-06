@@ -124,9 +124,36 @@ class SolidsTest {
     @Test
     fun aMovingSolidPushesToo() {
         val grid = SolidGrid(10, 10)
-        grid.dynamic.add(Solid(SolidShape.BOX, left = 20f, top = 20f, right = 52f, bottom = 52f))
+        grid.dynamic.add(Solid.moving(left = 20f, top = 20f, right = 52f, bottom = 52f))
         particle(36f, 50f)
         resolve(grid)
         assertEquals(52f, body.y[0], 0.001f)
+    }
+
+    @Test
+    fun aBoxBesideTheTallEdgeOfARisingSlopeCannotBeLeftThroughThatFace() {
+        val grid = SolidGrid(10, 10).apply { add(Solid.tile(4, 5, SolidShape.RISING)); add(Solid.tile(5, 5)) }
+        // inside the box, half a unit from the face it shares with the slope's full-height edge
+        particle(80.5f, 82f)
+        resolve(grid)
+        assertEquals(80.5f, body.x[0], 0.001f)
+        assertEquals(80f, body.y[0], 0.001f)
+    }
+
+    @Test
+    fun aBoxBesideTheLowEdgeOfAFallingSlopeCanBeLeftThroughThatFace() {
+        val grid = SolidGrid(10, 10).apply { add(Solid.tile(4, 5, SolidShape.FALLING)); add(Solid.tile(5, 5)) }
+        // a falling slope meets the box only at its bottom corner, so that face is open air above it
+        particle(80.5f, 82f)
+        resolve(grid)
+        assertEquals(80f, body.x[0], 0.001f)
+        assertEquals(82f, body.y[0], 0.001f)
+    }
+
+    @Test
+    fun aMovingSolidIsNotATileAndATileIsNotMoving() {
+        assertTrue(Solid.moving(0f, 0f, 10f, 10f).isMoving)
+        assertFalse(Solid.tile(2, 3).isMoving)
+        assertFalse(Solid.stub(2, 3).isMoving)
     }
 }

@@ -25,6 +25,26 @@ data class Spot(val x: Float, val y: Float)
 /** A sign that names the part of the level to its right, up to the next sign. */
 class Zone(val id: Char, val name: String, val x: Float, val y: Float)
 
+/** The characters of a level map, in one place. See [Level] for what each one means. */
+private object Legend {
+    const val AIR = '.'
+    const val GROUND = '#'
+    const val STUB = 'v'
+    const val RISING = '/'
+    const val FALLING = '\\'
+    const val PAD = 'J'
+    const val CRUSHER = 'M'
+    const val CURTAIN = 'r'
+    const val START = 'S'
+    const val FINISH = 'F'
+    const val FIRST_ZONE = '1'
+    const val LAST_ZONE = '4'
+
+    /** Whether a cell with this character has no solid in it, so something that falls through the cell keeps falling. */
+    fun isOpen(char: Char): Boolean =
+        char == AIR || char == CRUSHER || char == CURTAIN || char == START || char == FINISH || char in FIRST_ZONE..LAST_ZONE
+}
+
 /** A curtain of hanging red slime from [left] to [right], hanging from height [top]. */
 class CurtainSpec(val left: Float, val right: Float, val top: Float)
 
@@ -114,30 +134,31 @@ class Level private constructor(
             var finish: Spot? = null
             val t = SolidGrid.TILE
 
-            fun solid(col: Int, row: Int, tile: Int, shape: SolidShape = SolidShape.BOX, bouncy: Boolean = false) {
-                grid.add(Solid.tile(col, row, shape, bouncy))
-                tiles.add(PlacedTile(col, row, tile))
+            fun place(solid: Solid, tile: Int) {
+                grid.add(solid)
+                tiles.add(PlacedTile(solid.col, solid.row, tile))
             }
+            fun solid(col: Int, row: Int, tile: Int, shape: SolidShape = SolidShape.BOX, bouncy: Boolean = false) = place(Solid.tile(col, row, shape, bouncy), tile)
 
             for (row in rows.indices) for (col in 0 until cols) {
                 val spot = Spot((col + 0.5f) * t, (row + 1) * t)
                 when (val char = rows[row][col]) {
-                    '.' -> {}
-                    '#' -> solid(col, row, if (row > 0 && rows[row - 1][col] == '#') Tiles.DIRT else Tiles.GRASS)
-                    'v' -> { grid.add(Solid.stub(col, row)); tiles.add(PlacedTile(col, row, Tiles.STUB)) }
-                    '/' -> solid(col, row, Tiles.SLOPE_UP, SolidShape.RISING)
-                    '\\' -> solid(col, row, Tiles.SLOPE_DOWN, SolidShape.FALLING)
-                    'J' -> solid(col, row, Tiles.PAD, bouncy = true)
-                    'S' -> start = spot
-                    'F' -> finish = spot
-                    in '1'..'4' -> {
-                        val id = 'A' + (char - '1')
+                    Legend.AIR -> {}
+                    Legend.GROUND -> solid(col, row, if (row > 0 && rows[row - 1][col] == Legend.GROUND) Tiles.DIRT else Tiles.GRASS)
+                    Legend.STUB -> place(Solid.stub(col, row), Tiles.STUB)
+                    Legend.RISING -> solid(col, row, Tiles.SLOPE_UP, SolidShape.RISING)
+                    Legend.FALLING -> solid(col, row, Tiles.SLOPE_DOWN, SolidShape.FALLING)
+                    Legend.PAD -> solid(col, row, Tiles.PAD, bouncy = true)
+                    Legend.START -> start = spot
+                    Legend.FINISH -> finish = spot
+                    in Legend.FIRST_ZONE..Legend.LAST_ZONE -> {
+                        val id = 'A' + (char - Legend.FIRST_ZONE)
                         zones.add(Zone(id, ZONE_NAMES.getValue(id), spot.x, spot.y))
                     }
-                    'M' -> crushers.add(crusherAt(rows, col, row, grid))
-                    'r' -> if (col == 0 || rows[row][col - 1] != 'r') {
+                    Legend.CRUSHER -> crushers.add(crusherAt(rows, col, row, grid))
+                    Legend.CURTAIN -> if (col == 0 || rows[row][col - 1] != Legend.CURTAIN) {
                         var end = col
-                        while (end + 1 < cols && rows[row][end + 1] == 'r') end++
+                        while (end + 1 < cols && rows[row][end + 1] == Legend.CURTAIN) end++
                         curtains.add(CurtainSpec(col * t, (end + 1) * t, row * t))
                     }
                     else -> throw IllegalArgumentException("Unknown tile '$char' at ($col, $row)")
@@ -149,12 +170,12 @@ class Level private constructor(
         private fun crusherAt(rows: List<String>, col: Int, row: Int, grid: SolidGrid): Crusher {
             val t = SolidGrid.TILE
             var floorRow = row + 2
-            while (floorRow < rows.size && rows[floorRow][col] in ".MSF1234r") floorRow++
+            while (floorRow < rows.size && Legend.isOpen(rows[floorRow][col])) floorRow++
             require(floorRow < rows.size) { "The crusher at ($col, $row) has no floor below it" }
             val restTop = row * t
             val travel = floorRow * t - Crusher.GAP - (restTop + 2 * t)
             require(travel > 0f) { "The crusher at ($col, $row) is too close to its floor to swing" }
-            val solid = Solid(SolidShape.BOX, col * t, restTop, (col + 2) * t, restTop + 2 * t)
+            val solid = Solid.moving(col * t, restTop, (col + 2) * t, restTop + 2 * t)
             grid.dynamic.add(solid)
             return Crusher(solid, restTop, travel)
         }

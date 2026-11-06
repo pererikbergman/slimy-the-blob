@@ -112,6 +112,15 @@ class LevelTest {
     }
 
     @Test
+    fun aCrusherLooksPastOtherOpenMapCharactersForItsFloor() {
+        val level = Level.parse(listOf("M.", "..", "S.", "##"))
+        val crusher = level.crushers.single()
+        assertTrue(crusher.solid.isMoving)
+        level.advance(Crusher.PERIOD / 2f)
+        assertEquals(3 * 16f - Crusher.GAP, crusher.solid.bottom, 0.01f)
+    }
+
+    @Test
     fun aCrusherWithNoFloorBelowItIsAMistake() {
         assertFailsWith<IllegalArgumentException> { Level.parse(listOf("M.", "..", "..")) }
     }
