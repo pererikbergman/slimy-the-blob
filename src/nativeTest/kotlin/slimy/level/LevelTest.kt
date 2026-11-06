@@ -1,0 +1,109 @@
+package slimy.level
+
+import slimy.physics.SolidShape
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class LevelMapTest {
+    @Test
+    fun aMapIsRowsOfEqualLengthThatFillAndClearReshape() {
+        val map = LevelMap(6, 4)
+        map.fill(0, 3, 5, 3, '#')
+        map.put(2, 2, 'J')
+        map.clear(4, 3, 5, 3)
+        assertEquals(listOf("......", "......", "..J...", "####.."), map.rows())
+    }
+
+    @Test
+    fun drawingOutsideTheMapIsAMistakeNotASilentNoOp() {
+        val map = LevelMap(3, 3)
+        assertFailsWith<IllegalArgumentException> { map.put(3, 0, '#') }
+    }
+}
+
+class LevelTest {
+    private fun tileIndex(level: Level, col: Int, row: Int): Int? = level.tiles.firstOrNull { it.col == col && it.row == row }?.tile
+
+    @Test
+    fun eachTileCharacterBecomesTheRightSolid() {
+        val level = Level.parse(listOf("#v/\\J"))
+        assertEquals(SolidShape.BOX, level.grid.at(0, 0)!!.shape)
+        val stub = level.grid.at(1, 0)!!
+        assertEquals(8f, stub.bottom - stub.top, 0.001f)
+        assertEquals(SolidShape.RISING, level.grid.at(2, 0)!!.shape)
+        assertEquals(SolidShape.FALLING, level.grid.at(3, 0)!!.shape)
+        assertTrue(level.grid.at(4, 0)!!.isBouncy)
+    }
+
+    @Test
+    fun theTopOfASolidMassIsGrassAndTheRestIsDirt() {
+        val level = Level.parse(listOf("#", "#"))
+        assertEquals(Tiles.GRASS, tileIndex(level, 0, 0))
+        assertEquals(Tiles.DIRT, tileIndex(level, 0, 1))
+    }
+
+    @Test
+    fun otherCharactersPickTheirOwnTileArt() {
+        val level = Level.parse(listOf("v/\\J"))
+        assertEquals(Tiles.STUB, tileIndex(level, 0, 0))
+        assertEquals(Tiles.SLOPE_UP, tileIndex(level, 1, 0))
+        assertEquals(Tiles.SLOPE_DOWN, tileIndex(level, 2, 0))
+        assertEquals(Tiles.PAD, tileIndex(level, 3, 0))
+    }
+
+    @Test
+    fun startFinishAndZoneSignsStandOnTheBottomOfTheirCell() {
+        val level = Level.parse(listOf("S.1F"))
+        assertEquals(Spot(8f, 16f), level.start)
+        assertEquals(Spot(56f, 16f), level.finish)
+        val zone = assertNotNull(level.zone('A'))
+        assertEquals(40f, zone.x)
+        assertEquals(16f, zone.y)
+        assertEquals("The Calibration Chamber", zone.name)
+    }
+
+    @Test
+    fun aLevelWithoutStartOrFinishSaysSo() {
+        val level = Level.parse(listOf("##"))
+        assertNull(level.start)
+        assertNull(level.finish)
+    }
+
+    @Test
+    fun theZoneAtAPlaceIsTheLastSignToItsLeft() {
+        val level = Level.parse(listOf("1...2...3"))
+        assertEquals('A', level.zoneAt(8f)!!.id)
+        assertEquals('A', level.zoneAt(71f)!!.id)
+        assertEquals('B', level.zoneAt(80f)!!.id)
+        assertEquals('C', level.zoneAt(1000f)!!.id)
+    }
+
+    @Test
+    fun aCrusherSwingsDownToEightUnitsAboveTheFloorAndBackUp() {
+        val level = Level.parse(listOf("M.", "..", "..", "##"))
+        val crusher = level.crushers.single()
+        val floorTop = 3 * 16f
+        assertEquals(0f, crusher.solid.top, 0.001f)
+        assertEquals(32f, crusher.solid.bottom - crusher.solid.top, 0.001f)
+        assertTrue(crusher.solid in level.grid.dynamic)
+        level.advance(Crusher.PERIOD / 2f)
+        assertEquals(floorTop - 8f, crusher.solid.bottom, 0.01f)
+        level.advance(Crusher.PERIOD / 2f)
+        assertEquals(0f, crusher.solid.top, 0.01f)
+    }
+
+    @Test
+    fun aCrusherWithNoFloorBelowItIsAMistake() {
+        assertFailsWith<IllegalArgumentException> { Level.parse(listOf("M.", "..", "..")) }
+    }
+
+    @Test
+    fun raggedRowsAndUnknownCharactersAreRejected() {
+        assertFailsWith<IllegalArgumentException> { Level.parse(listOf("##", "#")) }
+        assertFailsWith<IllegalArgumentException> { Level.parse(listOf("#?")) }
+    }
+}

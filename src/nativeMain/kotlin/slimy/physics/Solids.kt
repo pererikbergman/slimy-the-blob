@@ -24,9 +24,9 @@ enum class SolidShape {
 class Solid(
     val shape: SolidShape,
     val left: Float,
-    val top: Float,
+    var top: Float,
     val right: Float,
-    val bottom: Float,
+    var bottom: Float,
     val isBouncy: Boolean = false,
     val col: Int = -1,
     val row: Int = -1,

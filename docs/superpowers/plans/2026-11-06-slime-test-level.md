@@ -100,10 +100,10 @@ In `AcceptanceTest`, geometry built from `SolidGrid`:
 - [x] Commit: "Cover the PRD acceptance criteria with tests"
 
 ### Task 6: Level parser (TDD)
-- [ ] Tests: `LevelMap.rows()` has equal-length rows; a 6×4 sample map parses `#`, `v` (bottom at tile top + 8), `/`, `\`, `J` (bouncy), `S`, `1`, `M` into the right solids, start, zone and crusher; ragged rows throw; `#` with air above gets the grass-top tile index, otherwise fill
-- [ ] Crusher test: after half a period its top has moved by its full travel; the block is in `grid.dynamic`
-- [ ] Implement `LevelMap`, `Level.parse`, `Tile`, `Zone` (id, PRD name, x, y), `Crusher` (cosine oscillation, 2×2 tiles, lowest point leaves 8 units above the floor), `Level.advance(dt)`, `zoneAt(x)`, `zoneOrNull(id)`, `width/height`
-- [ ] Commit: "Parse tile maps into solids, tiles and zones"
+- [x] Tests: `LevelMap.rows()` has equal-length rows; a 6×4 sample map parses `#`, `v` (bottom at tile top + 8), `/`, `\`, `J` (bouncy), `S`, `1`, `M` into the right solids, start, zone and crusher; ragged rows throw; `#` with air above gets the grass-top tile index, otherwise fill
+- [x] Crusher test: after half a period its top has moved by its full travel; the block is in `grid.dynamic`
+- [x] Implement `LevelMap`, `Level.parse`, `Tile`, `Zone` (id, PRD name, x, y), `Crusher` (cosine oscillation, 2×2 tiles, lowest point leaves 8 units above the floor), `Level.advance(dt)`, `zoneAt(x)`, `zoneOrNull(id)`, `width/height`
+- [x] Commit: "Parse tile maps into solids, tiles and zones"
 
 ### Task 7: The test level
 Built in `TestLevel` with `LevelMap`, 240×24 tiles, floor on rows 20–23, walls at both ends:
