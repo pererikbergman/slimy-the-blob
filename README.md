@@ -1,92 +1,126 @@
-# Slimy the Blob
+<p align="center">
+  <img src="docs/img/hero.png" alt="Slimy the Blob" width="100%">
+</p>
 
-A test level for a soft-body slime, made with [klyph](https://github.com/inemtsev/klyph), a 2D game
-engine in Kotlin/Native on SDL3. The slime is a ring of Verlet particles around a heavy core that
-squashes on landing, stretches in the air and squeezes through gaps narrower than itself. The
-level has four zones, each built to test one thing.
+<p align="center">
+  <b>a soft-body slime platformer test level</b><br>
+  made in Kotlin with the <a href="https://github.com/inemtsev/klyph">klyph</a> game engine
+</p>
 
-## Requirements
+---
 
-- JDK 17 or newer, for Gradle. The wrapper downloads Gradle itself.
-- SDL3 3.4 or newer. On macOS and Windows the klyph plugin downloads it when none is installed;
-  `brew install sdl3` avoids the download on macOS. On Linux install your distribution's package
-  (`libsdl3-dev` on Debian 13 and Ubuntu 25.04 or newer, `sdl3` on Arch, `SDL3-devel` on Fedora).
+## ⚡ 10-second version
 
-## Play
+- 🟢 the slime is **not a sprite**. it's a blob of physics dots
+- 🕳️ it **squeezes through holes smaller than itself**
+- 🗺️ **4 zones**, each tests one thing
+- 🤖 a **bot plays every zone** to check you can actually finish it
+- 🧪 **63 tests**, all green
+
+## ▶️ Play it
 
 ```
-./gradlew run          # builds the debug executable and plays it
-./gradlew distribute   # zips the release executable, assets/ and SDL3 in build/distributions/
+./gradlew run
 ```
 
-| Key | Does |
+| key | does |
 |---|---|
-| A / D or the arrows | move |
-| Space, W or Up | jump (hold for a higher jump, tap for a hop) |
-| 1 to 4 | go to zone A to D |
-| R | restart the current zone |
-| F2 | show the slime's particles (the red one is the core) |
-| F3 | klyph's frame stats |
-| Esc | quit |
+| `A` `D` / arrows | move |
+| `Space` / `W` / `Up` | jump (hold = higher) |
+| `1` `2` `3` `4` | teleport to a zone |
+| `R` | restart zone |
+| `F2` | show the physics dots 👀 |
 
-Falling out of the level puts you back at the start of the zone you were in.
+---
 
-## The zones
+## 🧬 What the slime is made of
 
-| Zone | Columns | Tests |
-|---|---|---|
-| **A** The Calibration Chamber | 0-39 | Flat ground, a one-tile step and a two-tile block: movement, friction and the resting shape. |
-| **B** The Vertical Ascent | 40-99 | Pits two, three and four tiles wide, steps up and down, a low wall: jump height and air control. |
-| **C** The Squeeze Corridor | 100-159 | Three tunnels two tiles, one tile and half a tile high (60% of the slime's height), steps up to a deck with a one-tile shaft (60% of its width), and a corridor out under the deck. |
-| **D** The Kinetic Gauntlet | 160-239 | A six-tile 45 degree hill, two bounce pads under a ledge only a bounce reaches (with a curtain of red slime hanging under it that you can push through), and a crusher that comes down to eight units above the ground. |
+<img src="docs/img/anatomy.png" alt="slime anatomy" width="100%">
 
-Hop onto the deck's shaft in zone C and the slime sinks through under its own weight; the deck
-ends in a wall, so that is the way on. A slime walking across it bridges the gap, and one that is
-stopped dead on it perches on the rim, so land on it from a jump.
+**22 dots** make the skin. **1 heavy ball** in the middle is the goo inside. That's the whole slime.
+Every frame the dots push and pull on each other, and that's what you see wobbling.
 
-## Try it without a keyboard
+## 🍮 It squishes
 
-```
-./gradlew run -Pklyph.frames=120 -Pklyph.screenshot=100:shot.png     # save frame 100 as a PNG
-./gradlew run -Pklyph.autopilot=1                                    # the slime runs right and hops by itself
-SLIME_ZONE=C ./gradlew run -Pklyph.autopilot=1                       # start in zone C
-```
+<img src="docs/img/squash_stretch.png" alt="squash and stretch" width="100%">
 
-## Tests
+Nobody animated this. These are **real frames from the physics**: it stretches when it launches,
+flattens when it lands, then settles back.
+
+## 🕳️ It squeezes through gaps
+
+The shaft is **60% as wide as the slime**. Low tunnel? Same deal, **60% of its height**.
+
+<img src="docs/img/squeeze_shaft.png" alt="slime falling through a narrow shaft" width="100%">
+
+<img src="docs/img/squeeze_tunnel.png" alt="slime flattening through a low tunnel" width="100%">
+
+The trick is the **heavy core**. When the skin gets stuck on an edge, the core's weight drags the
+whole body through. 🪄
+
+---
+
+## 🗺️ 4 zones
+
+<img src="docs/img/zones.png" alt="the four zones" width="100%">
+
+| zone | what it tests |
+|---|---|
+| **A** | running, friction, little hops |
+| **B** | pits up to 4 tiles wide, stairs, air control |
+| **C** | 3 tunnels getting lower, then a 1-tile shaft you have to hop onto |
+| **D** | a 45° hill, bounce pads, a crusher, and a ledge only a bounce reaches |
+
+## 🔴 Red slime curtain
+
+<img src="docs/img/curtain.png" alt="red slime curtain" align="right" width="46%">
+
+Bounce up to the ledge in zone D and push through the red curtain. 💥
+
+It's cloth made of the same kind of dots. Touch it, it swings. Leave it, it settles.
+The slime pushes it, it doesn't push back.
+
+<br clear="right">
+
+---
+
+## ⚙️ How it works (one frame)
+
+<img src="docs/img/flow.png" alt="how a frame works" width="100%">
+
+60 times a second the slime does **move → relax → collide**, four times, in tiny steps.
+That's why it doesn't tunnel through walls or explode.
+
+## 📁 Where stuff is
+
+| folder | what |
+|---|---|
+| `physics/` | the slime, the dots, the floor and wall pushing, the curtain. **No engine code here** (that's why it's testable) |
+| `level/` | the level is a **text map**: `#` ground, `v` low ceiling, `J` bounce pad, `M` crusher, `r` curtain |
+| `render/` | draws the slime one pixel row at a time (klyph has no polygons) |
+| `Game.kt` | glues it all to the engine |
+| `art/` | scripts that draw the pixel art, and this README's pictures |
+
+---
+
+## 🐛 Bugs we hit (the fun ones)
+
+- **The rigid slime.** First version sat on a hole like a lid. Numbers didn't help. It needed a *different model*: soft constraints plus the heavy core.
+- **The impassable level.** The bot played zone C and got stuck forever: the last tunnel opened straight into a wall. A human would've found that in an hour. The bot found it in a second.
+- **The hollow ring.** The slime's outline can fold over itself. The old fill rule treated the folded part as "outside" and left it **empty**. Now it fills by winding number, so folds stay solid.
+
+## 🧪 Tests
+
+**63 tests**, and one of them is a **bot** that runs the real level on the real physics:
+hold right, jump at walls and gaps. If the bot can't finish a zone, the zone is broken.
 
 ```
 ./gradlew allTests
 ```
 
-| Tests | Check |
-|---|---|
-| `physics/AcceptanceTest` | The PRD's criteria: no blow-up or tearing in a one-tile shaft, passing a gap 60% of its size and recovering its shape, no particle left inside a solid after long falls or corner landings. |
-| `physics/SlimeTest` | A jump pressed this step is rising by the end of it, jump height, buffered jumps, top speed, bounce pads. |
-| `physics/CurtainTest` | The hanging red slime hangs straight, is pushed out of the slime's body, swings when it is walked through and settles again. |
-| `physics/SoftBodyTest`, `SolidsTest` | The constraints, and pushing particles out of boxes, slopes and stubs. |
-| `level/LevelTest`, `TestLevelTest` | Reading the tile map; the shape of the four zones. |
-| `level/PlaythroughTest` | A bot plays every zone on the real level and physics: hold right, jump at walls and pits. |
-| `render/ScanlineTest` | The rows used to fill the slime add up to its area. |
+---
 
-## Layout
-
-| Path | Contents |
-|---|---|
-| `src/nativeMain/kotlin/slimy/Main.kt`, `Game.kt` | The window, camera, input and HUD. |
-| `src/nativeMain/kotlin/slimy/physics/` | `Tuning` (every number that decides how the slime feels), `SoftBody`, `Solids`, `Slime`, `Curtain` (the hanging red slime). |
-| `src/nativeMain/kotlin/slimy/level/` | `LevelMap` and `Level` (tile characters in, solids and sprites out) and `TestLevel`. |
-| `src/nativeMain/kotlin/slimy/render/` | `SlimePainter`, `CurtainPainter`, `Scanline`, `Lines`. |
-| `assets/` | `tiles.png` and `tiles.json`, `crusher.png`, `face.png`, `bg.png`. |
-| `art/tiles/draw.py` | Draws all the art; every render is kept as `art/<set>/v<N>_*.png`. |
-| `docs/superpowers/plans/` | The implementation plan this was built from. |
-
-## How the slime works
-
-Twenty-two particles form a half-disc outline around one core particle. Stiff distance constraints
-hold the outline, soft ones tie it to the core and an area constraint keeps the volume, all XPBD,
-so how soft they are does not depend on the iteration count. The core is thirty-four times heavier than
-an outline particle and stands for the slime's insides: when the outline is held on the rim of a
-gap, its weight drags the body through. `Tuning.kt` explains each number and what moving it does.
-
-To rename the game, change `rootProject.name` in `settings.gradle.kts`, the package in the sources
-and `entryPoint` in `build.gradle.kts`.
+<p align="center">
+  more details, controls and the full test list → <a href="docs/DETAILS.md"><b>docs/DETAILS.md</b></a><br>
+  <sub>every picture here comes from the game itself: <code>python3 art/readme/draw.py</code></sub>
+</p>
