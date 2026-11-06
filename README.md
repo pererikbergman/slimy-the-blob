@@ -15,7 +15,7 @@
 - 🕳️ it **squeezes through holes smaller than itself**
 - 🗺️ **4 zones**, each tests one thing
 - 🤖 a **bot plays every zone** to check you can actually finish it
-- 🧪 **63 tests**, all green
+- 🧪 **84 tests**, all green
 
 ## ▶️ Play it
 
@@ -95,10 +95,11 @@ That's why it doesn't tunnel through walls or explode.
 
 | folder | what |
 |---|---|
-| `physics/` | the slime, the dots, the floor and wall pushing, the curtain. **No engine code here** (that's why it's testable) |
+| `physics/` | the slime, the dots, the outline, the floor and wall pushing, the curtain. **No engine code here** (that's why it's testable) |
 | `level/` | the level is a **text map**: `#` ground, `v` low ceiling, `J` bounce pad, `M` crusher, `r` curtain |
 | `render/` | draws the slime one pixel row at a time (klyph has no polygons) |
-| `Game.kt` | glues it all to the engine |
+| `GameSession.kt` | the rules: step order, jump buffering, falling out, restarts. **Also no engine code**, so a test plays the same code the game runs |
+| `Game.kt` | a thin adapter: reads the keyboard into the session and draws what it holds |
 | `art/` | scripts that draw the pixel art, and this README's pictures |
 
 ---
@@ -111,7 +112,7 @@ That's why it doesn't tunnel through walls or explode.
 
 ## 🧪 Tests
 
-**63 tests**, and one of them is a **bot** that runs the real level on the real physics:
+**84 tests**, and some of them are a **bot** that runs the real level on the real physics:
 hold right, jump at walls and gaps. If the bot can't finish a zone, the zone is broken.
 
 ```

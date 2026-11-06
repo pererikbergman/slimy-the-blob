@@ -65,19 +65,22 @@ SLIME_ZONE=C ./gradlew run -Pklyph.autopilot=1                       # start in 
 | `physics/AcceptanceTest` | The PRD's criteria: no blow-up or tearing in a one-tile shaft, passing a gap 60% of its size and recovering its shape, no particle left inside a solid after long falls or corner landings. |
 | `physics/SlimeTest` | A jump pressed this step is rising by the end of it, jump height, buffered jumps, top speed, bounce pads. |
 | `physics/CurtainTest` | The hanging red slime hangs straight, is pushed out of the slime's body, swings when it is walked through and settles again. |
-| `physics/SoftBodyTest`, `SolidsTest` | The constraints, and pushing particles out of boxes, slopes and stubs. |
+| `physics/SoftBodyTest`, `SolidsTest` | The constraints, and pushing particles out of boxes, slopes and stubs, including which faces are buried against a neighbour. |
+| `physics/ContactsTest` | What the slime rested on this step and last step, and that the core never counts as a foot. |
 | `level/LevelTest`, `TestLevelTest` | Reading the tile map; the shape of the four zones. |
 | `level/PlaythroughTest` | A bot plays every zone on the real level and physics: hold right, jump at walls and pits. |
-| `render/ScanlineTest` | The rows used to fill the slime add up to its area. |
+| `physics/OutlineTest` | The rows used to fill the slime add up to its area, and the fill and the curtain agree about what is inside even when the outline has folded over itself. |
+| `GameSessionTest` | A jump press counts once, a slime that falls out is put back in its zone, and the curtains are stepped with the slime. |
 
 ## Layout
 
 | Path | Contents |
 |---|---|
-| `src/nativeMain/kotlin/slimy/Main.kt`, `Game.kt` | The window, camera, input and HUD. |
+| `src/nativeMain/kotlin/slimy/GameSession.kt` | The game's rules with no engine code: the slime, the curtains, the order of a step. |
+| `src/nativeMain/kotlin/slimy/Main.kt`, `Game.kt` | The window, camera, input and HUD, reading the keyboard into the session. |
 | `src/nativeMain/kotlin/slimy/physics/` | `SoftBody`, `Outline`, `Solids`, `Contacts`, `Slime`, `Curtain`. Each owns the numbers that decide how it behaves, in its `companion object` (the hanging red slime). |
 | `src/nativeMain/kotlin/slimy/level/` | `LevelMap` and `Level` (tile characters in, solids and sprites out) and `TestLevel`. |
-| `src/nativeMain/kotlin/slimy/render/` | `SlimePainter`, `CurtainPainter`, `Scanline`, `Lines`. |
+| `src/nativeMain/kotlin/slimy/render/` | `SlimePainter`, `CurtainPainter`, `Lines`. |
 | `assets/` | `tiles.png` and `tiles.json`, `crusher.png`, `face.png`, `bg.png`. |
 | `art/tiles/draw.py` | Draws all the art; every render is kept as `art/<set>/v<N>_*.png`. |
 | `docs/superpowers/plans/` | The implementation plan this was built from. |
