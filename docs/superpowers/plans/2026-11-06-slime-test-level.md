@@ -124,11 +124,11 @@ Invoke the `pixel-graphics` skill with this brief; keep scripts and versions und
 
 ### Task 9: SlimePainter
 No unit test (needs a canvas); verified by screenshot in Task 10:
-- [ ] Scanline fill: for each integer row between the ring's min and max y, intersect ring edges, sort crossings (reused scratch array, no per-frame allocation), draw rects between pairs in `DrawSpace.WORLD`
-- [ ] Outline: one thin rotated `whitePixel` quad per ring edge, one layer above the fill
-- [ ] Face sprite at the centroid, nudged toward `facing`
-- [ ] Debug mode: 2×2 rects at every particle and the core
-- [ ] Commit: "Paint the slime from its particles"
+- [x] Scanline fill: for each integer row between the ring's min and max y, intersect ring edges, sort crossings (reused scratch array, no per-frame allocation), draw rects between pairs in `DrawSpace.WORLD`
+- [x] Outline: one thin rotated `whitePixel` quad per ring edge, one layer above the fill
+- [x] Face sprite at the centroid, nudged toward `facing`
+- [x] Debug mode: 2×2 rects at every particle and the core
+- [x] Commit: "Paint the slime from its particles"
 
 ### Task 10: Game wiring and visual verification
 - [ ] `Game.kt` `installGame()`: parse `TestLevel`, zoom 3, camera bounds = level, spawn tile sprites (NEAREST) and zone `Text` signs, create slime/input/painter
