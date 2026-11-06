@@ -142,9 +142,9 @@ No unit test (needs a canvas); verified by screenshot in Task 10:
 - [x] Commit: "Wire the slime and test level into the game"
 
 ### Task 11: Docs and wrap-up
-- [ ] Update `README.md`: controls, zone keys, env vars, test and screenshot commands, what each zone tests
-- [ ] Run `./gradlew allTests` and `./gradlew run -Pklyph.frames=60` one last time; both must pass
-- [ ] Commit: "Document the test level"
+- [x] Update `README.md`: controls, zone keys, env vars, test and screenshot commands, what each zone tests
+- [x] Run `./gradlew allTests` and `./gradlew run -Pklyph.frames=60` one last time; both must pass
+- [x] Commit: "Document the test level"
 
 ## Self-review against the PRD
 
@@ -152,3 +152,12 @@ No unit test (needs a canvas); verified by screenshot in Task 10:
 - §3 zones A–D with every listed feature → Task 7; "dynamic obstacles" = crusher (Tasks 6, 7, 10); "bouncing pads" = `J`; "sloped surfaces" = `/` `\`.
 - §4 input latency, stability, 60% squeeze, no clipping → Task 5 tests, each named after its criterion.
 - Not in the PRD, added on purpose: zone teleport keys, autopilot and env vars, so a test level can be checked without hands on the keyboard.
+
+
+## What changed while building it
+
+- **XPBD constraints and a heavy core, not stiffness-based PBD (Tasks 2, 5).** With stiffnesses from 0.005 to 0.9 the slime perched on the rim of a one-tile shaft and stalled at the mouth of the half-tile tunnel, because a PBD stiffness is relative to a gravity load of about 0.03 units per substep, so everything was effectively rigid. Compliance in real units plus a core `CORE_MASS` times heavier than an outline particle (the slime's insides) fixed it. `Tuning.kt` records the values and what each does.
+- **One tile per particle, not a 3×3 neighbourhood (Task 3).** A particle is a point, so it is only ever inside one tile. A tile whose four faces are all buried by neighbours now steps the particle toward its nearest face instead of leaving it stuck, which a corner-landing test found.
+- **Six tile cells plus `crusher.png` (Task 8).** A 2×2 block cannot be tiled from one bordered cell.
+- **Zone C's third tunnel is 6 tiles long, not 8, with a high ceiling after it (Task 7).** The bot playthrough found that the original exit ran straight into a two-tile step with no room to jump under an 8-unit ceiling.
+- **Extra tests (Task 10).** `PlaythroughTest` plays each zone with a bot, and one test sits a slime at rest on the deck's shaft; that one is what set `CORE_MASS` to 30 (16 or less perches, 20 or more sinks).
