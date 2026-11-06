@@ -29,7 +29,7 @@ class SolidsTest {
     }
 
     /** A 10 x 10 grid with a floor of full tiles on row 5, whose top is y = 80. */
-    private fun floorGrid(): SolidGrid = SolidGrid(10, 10).apply { for (c in 0 until 10) add(Solid.tile(c, 5)) }
+    private fun floorGrid(): SolidGrid = TestScenes.flatFloor(10, 10, firstRow = 5, thickness = 1)
 
     @Test
     fun aParticleFallingIntoTheFloorLandsOnTopKeepingItsSidewaysSpeed() {
@@ -155,5 +155,36 @@ class SolidsTest {
         assertTrue(Solid.moving(0f, 0f, 10f, 10f).isMoving)
         assertFalse(Solid.tile(2, 3).isMoving)
         assertFalse(Solid.stub(2, 3).isMoving)
+    }
+
+    @Test
+    fun aPointIsInsideASolidOnlyPastItsSurfaceByMoreThanTheMargin() {
+        val box = SolidGrid(10, 10).apply { add(Solid.tile(2, 2)) }
+        assertTrue(box.isSolidAt(40f, 40f))
+        assertFalse(box.isSolidAt(32f, 40f), "a point on the surface is outside")
+        assertFalse(box.isSolidAt(10f, 40f))
+        assertFalse(box.isSolidAt(33f, 40f, margin = 2f), "inside by 1 is not inside by more than 2")
+        assertTrue(box.isSolidAt(36f, 40f, margin = 2f))
+    }
+
+    @Test
+    fun aStubIsOnlySolidInItsTopHalfAndASlopeOnlyBelowItsSurface() {
+        val stub = SolidGrid(10, 10).apply { add(Solid.stub(4, 4)) }
+        assertTrue(stub.isSolidAt(70f, 68f))
+        assertFalse(stub.isSolidAt(70f, 76f))
+        val rising = SolidGrid(10, 10).apply { add(Solid.tile(2, 2, SolidShape.RISING)) }
+        assertTrue(rising.isSolidAt(44f, 44f), "below the rising surface")
+        assertFalse(rising.isSolidAt(36f, 36f), "above it")
+        val falling = SolidGrid(10, 10).apply { add(Solid.tile(2, 2, SolidShape.FALLING)) }
+        assertTrue(falling.isSolidAt(36f, 44f), "below the falling surface")
+        assertFalse(falling.isSolidAt(44f, 36f), "above it")
+    }
+
+    @Test
+    fun aMovingSolidIsFoundToo() {
+        val grid = SolidGrid(10, 10)
+        grid.dynamic.add(Solid.moving(20f, 20f, 52f, 52f))
+        assertTrue(grid.isSolidAt(36f, 36f))
+        assertFalse(grid.isSolidAt(60f, 36f))
     }
 }

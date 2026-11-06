@@ -40,6 +40,19 @@ class Solid private constructor(
     /** Whether this solid moves, such as a crusher, rather than filling a grid cell. It has no neighbours to bury its faces against. */
     val isMoving: Boolean get() = col < 0
 
+    /**
+     * Whether the point ([x], [y]) is inside this solid by more than [margin] units, measured straight
+     * out of the nearest face (the slope's own surface, for a slope). A point on the surface is outside.
+     * This is the one place that decides what "inside" means: collision and [SolidGrid.isSolidAt] both ask it.
+     */
+    fun contains(x: Float, y: Float, margin: Float = 0f): Boolean = when (shape) {
+        SolidShape.BOX -> x > left + margin && x < right - margin && y > top + margin && y < bottom - margin
+        SolidShape.RISING -> isWithinEdges(x, y) && ((x - left) - (bottom - y)) * DIAGONAL > margin
+        SolidShape.FALLING -> isWithinEdges(x, y) && ((right - left) - (x - left) - (bottom - y)) * DIAGONAL > margin
+    }
+
+    private fun isWithinEdges(x: Float, y: Float) = x >= left && x <= right && y >= top && y <= bottom
+
     companion object {
         /** A solid that is not tied to a grid cell, filling the given edges; its [top] and [bottom] may change. */
         fun moving(left: Float, top: Float, right: Float, bottom: Float): Solid = Solid(SolidShape.BOX, left, top, right, bottom)
@@ -82,6 +95,14 @@ class SolidGrid(val cols: Int, val rows: Int) {
         if (col in 0 until cols && row in 0 until rows) cells[row * cols + col] = null
     }
 
+    /** Whether the point ([x], [y]) is inside any solid by more than [margin] units; see [Solid.contains]. */
+    fun isSolidAt(x: Float, y: Float, margin: Float = 0f): Boolean {
+        val solid = at(floor(x / TILE).toInt(), floor(y / TILE).toInt())
+        if (solid != null && solid.contains(x, y, margin)) return true
+        for (d in dynamic) if (d.contains(x, y, margin)) return true
+        return false
+    }
+
     /**
      * Pushes every particle of [body] out of the solids, along the way of least penetration. The
      * speed going into the surface is removed and the rest kept, so particles slide along walls and
@@ -102,13 +123,13 @@ class SolidGrid(val cols: Int, val rows: Int) {
     private fun push(body: SoftBody, i: Int, solid: Solid, contacts: Contacts) {
         val px = body.x[i]
         val py = body.y[i]
+        if (!solid.contains(px, py)) return
         val exit = exitScratch
-        val isInside = when (solid.shape) {
+        when (solid.shape) {
             SolidShape.BOX -> exitFromBox(solid, px, py, exit)
             SolidShape.RISING -> exitFromRising(solid, px, py, exit)
             SolidShape.FALLING -> exitFromFalling(solid, px, py, exit)
         }
-        if (!isInside) return
         moveOut(body, i, exit)
         if (exit.ny < MIN_FLOOR_NORMAL_Y) contacts.recordFloor(i, solid.isBouncy)
     }
@@ -128,9 +149,8 @@ class SolidGrid(val cols: Int, val rows: Int) {
         body.prevY[i] = body.y[i] - vy
     }
 
-    /** If the point is inside the box, writes the cheapest way out to [exit] and returns `true`. */
-    private fun exitFromBox(solid: Solid, px: Float, py: Float, exit: Exit): Boolean {
-        if (px <= solid.left || px >= solid.right || py <= solid.top || py >= solid.bottom) return false
+    /** Writes to [exit] the cheapest way out of the box for a point inside it. */
+    private fun exitFromBox(solid: Solid, px: Float, py: Float, exit: Exit) {
         nearestExit(solid, px, py, respectBuried = true)
         // Buried on every side, such as under the foot of a wall: step toward the nearest face
         // anyway, just past it, and the tile there pushes the particle the rest of the way out.
@@ -138,30 +158,25 @@ class SolidGrid(val cols: Int, val rows: Int) {
             nearestExit(solid, px, py, respectBuried = false)
             exit.depth += 0.01f
         }
-        return true
     }
 
-    /** If the point is under a surface that rises to the right, writes the way out, along the surface's normal, and returns `true`. */
-    private fun exitFromRising(solid: Solid, px: Float, py: Float, exit: Exit): Boolean {
+    /** Writes to [exit] the way out, along the surface's normal, for a point under a surface that rises to the right. */
+    private fun exitFromRising(solid: Solid, px: Float, py: Float, exit: Exit) {
         val u = px - solid.left
         val v = solid.bottom - py
-        if (u <= v) return false
         exit.depth = (u - v) * DIAGONAL
         exit.nx = -DIAGONAL
         exit.ny = -DIAGONAL
-        return true
     }
 
-    /** If the point is under a surface that falls to the right, writes the way out, along the surface's normal, and returns `true`. */
-    private fun exitFromFalling(solid: Solid, px: Float, py: Float, exit: Exit): Boolean {
+    /** Writes to [exit] the way out, along the surface's normal, for a point under a surface that falls to the right. */
+    private fun exitFromFalling(solid: Solid, px: Float, py: Float, exit: Exit) {
         val u = px - solid.left
         val v = solid.bottom - py
         val side = solid.right - solid.left
-        if (u + v >= side) return false
         exit.depth = (side - u - v) * DIAGONAL
         exit.nx = DIAGONAL
         exit.ny = -DIAGONAL
-        return true
     }
 
     /** The way out of a box that costs the least movement, reused between calls so nothing allocates. */

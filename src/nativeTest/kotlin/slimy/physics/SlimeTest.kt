@@ -11,12 +11,7 @@ class SlimeTest {
     private val floorTop = 15 * SolidGrid.TILE
 
     /** 40 x 20 tiles with a two-tile floor whose top is y = 240; [bouncy] columns get a bounce pad on top. */
-    private fun grid(bouncy: IntRange = IntRange.EMPTY): SolidGrid = SolidGrid(40, 20).apply {
-        for (c in 0 until 40) {
-            add(Solid.tile(c, 15, isBouncy = c in bouncy))
-            add(Solid.tile(c, 16))
-        }
-    }
+    private fun grid(bouncy: IntRange = IntRange.EMPTY): SolidGrid = TestScenes.flatFloor(40, 20, firstRow = 15, bouncy = bouncy)
 
     private fun settled(grid: SolidGrid = grid()): Slime {
         val slime = Slime(grid, startX = 320f, startBaseY = floorTop - 40f)
@@ -93,7 +88,7 @@ class SlimeTest {
         assertTrue(slime.body.centerX() > start + 50f, "moved ${slime.body.centerX() - start}")
         assertEquals(1, slime.facing)
         repeat(90) { slime.step(SlimeInput(), dt) }
-        assertTrue(abs(slime.body.meanVelocityX(dt / Slime.SUBSTEPS)) < 5f)
+        assertTrue(abs(slime.velocityX) < 5f)
         assertTrue(slime.body.isFinite())
     }
 
@@ -101,7 +96,7 @@ class SlimeTest {
     fun theSlimeNeverRunsFasterThanTheTopSpeed() {
         val slime = settled()
         repeat(180) { slime.step(SlimeInput(move = 1f), dt) }
-        val speed = slime.body.meanVelocityX(dt / Slime.SUBSTEPS)
+        val speed = slime.velocityX
         assertTrue(speed <= Slime.MAX_SPEED * 1.15f, "speed $speed")
     }
 

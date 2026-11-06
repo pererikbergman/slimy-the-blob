@@ -11,14 +11,6 @@ class AcceptanceTest {
     private val restWidth = 2 * SoftBody.RADIUS
     private val restArea = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS).area()
 
-    private fun solidEverywhere(cols: Int, rows: Int): SolidGrid = SolidGrid(cols, rows).apply {
-        for (c in 0 until cols) for (r in 0 until rows) add(Solid.tile(c, r))
-    }
-
-    private fun SolidGrid.carve(cols: IntRange, rows: IntRange) {
-        for (c in cols) for (r in rows) removeAt(c, r)
-    }
-
     private fun Slime.run(steps: Int, move: Float = 0f) = repeat(steps) {
         step(SlimeInput(move = move), dt)
         assertTrue(body.isFinite(), "the body blew up")
@@ -32,7 +24,7 @@ class AcceptanceTest {
 
     /** A big solid block with a one-tile-wide vertical slot (col 11) from row 5 down to [slotBottom] and a chamber under it. */
     private fun shaftLevel(slotBottom: Int, chamberRows: IntRange?): SolidGrid {
-        val grid = solidEverywhere(30, 45)
+        val grid = TestScenes.solidEverywhere(30, 45)
         grid.carve(1..28, 0..4)
         grid.carve(11..11, 5..slotBottom)
         if (chamberRows != null) grid.carve(1..28, chamberRows)
@@ -67,8 +59,7 @@ class AcceptanceTest {
     @Test
     fun theSlimePushesThroughALowTunnelAndRecovers() {
         // A floor at row 16 (top 256), a tunnel from col 10 to 15 whose ceiling leaves 8 units: 60% of the slime's height.
-        val grid = SolidGrid(40, 20)
-        for (c in 0 until 40) { grid.add(Solid.tile(c, 16)); grid.add(Solid.tile(c, 17)) }
+        val grid = TestScenes.flatFloor(40, 20, firstRow = 16)
         for (c in 10..15) { grid.add(Solid.tile(c, 14)); grid.add(Solid.stub(c, 15)) }
         for (r in 0..15) { grid.add(Solid.tile(0, r)); grid.add(Solid.tile(39, r)) }
         val slime = Slime(grid, startX = 6 * tile, startBaseY = 16 * tile)
@@ -85,8 +76,7 @@ class AcceptanceTest {
 
     @Test
     fun aLongFallOntoAFloorNeverLeavesAParticleInsideIt() {
-        val grid = SolidGrid(40, 50)
-        for (c in 0 until 40) { grid.add(Solid.tile(c, 40)); grid.add(Solid.tile(c, 41)) }
+        val grid = TestScenes.flatFloor(40, 50, firstRow = 40)
         val slime = Slime(grid, startX = 320f, startBaseY = 40 * tile - 430f)
         repeat(240) {
             slime.step(SlimeInput(), dt)
@@ -96,8 +86,7 @@ class AcceptanceTest {
 
     @Test
     fun landingOnTheCornerOfABlockNeverLeavesAParticleInsideIt() {
-        val grid = SolidGrid(40, 50)
-        for (c in 0 until 40) { grid.add(Solid.tile(c, 40)); grid.add(Solid.tile(c, 41)) }
+        val grid = TestScenes.flatFloor(40, 50, firstRow = 40)
         for (c in 20..25) for (r in 37..39) grid.add(Solid.tile(c, r))
         // Centred on the block's left edge, so half the slime lands on it and half beside it.
         val slime = Slime(grid, startX = 20 * tile, startBaseY = 30 * tile - 300f)
@@ -111,9 +100,7 @@ class AcceptanceTest {
         for (i in 0 until slime.body.size) {
             val x = slime.body.x[i]
             val y = slime.body.y[i]
-            val solid = grid.at(kotlin.math.floor(x / tile).toInt(), kotlin.math.floor(y / tile).toInt()) ?: continue
-            val inside = x > solid.left + 0.05f && x < solid.right - 0.05f && y > solid.top + 0.05f && y < solid.bottom - 0.05f
-            assertTrue(!inside, "particle $i is inside ${solid.left}..${solid.right} x ${solid.top}..${solid.bottom} at ($x, $y)")
+            assertTrue(!grid.isSolidAt(x, y, margin = 0.05f), "particle $i is inside a solid at ($x, $y)")
         }
     }
 }

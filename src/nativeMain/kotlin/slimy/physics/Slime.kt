@@ -31,6 +31,11 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     var facing = 1
         private set
 
+    /** Mean horizontal velocity of the body, in units per second, as of the last step. */
+    val velocityX: Float get() = body.meanVelocityX(substepSeconds)
+
+    private var substepSeconds = 1f / 60f / SUBSTEPS
+
     private var coyote = 0f
     private var jumpBuffer = 0f
 
@@ -57,6 +62,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     /** Advances the slime by [dt] seconds under [input]. */
     fun step(input: SlimeInput, dt: Float) {
         val h = dt / SUBSTEPS
+        substepSeconds = h
         hasJumped = false
         hasBounced = false
         contacts.beginStep()
