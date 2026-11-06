@@ -449,7 +449,7 @@ def flow():
     box(img, 960, 500, 200, 100, "SCREEN", ["KLYPH + SDL3"], WHITE)
     arrow(img, (922, 550), (958, 550))
     arrow(img, (1000, 442), (800, 498), color=GREY)
-    box(img, 20, 500, 280, 100, "84 TESTS", ["INCLUDING A BOT THAT", "PLAYS EVERY ZONE"], hx("ff8aa0"))
+    box(img, 20, 500, 280, 100, "92 TESTS", ["INCLUDING A BOT THAT", "PLAYS EVERY ZONE"], hx("ff8aa0"))
     arrow(img, (140, 498), (140, 412), color=GREY)
     img.save(os.path.join(OUT, "flow.png"))
 

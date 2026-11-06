@@ -15,7 +15,7 @@
 - 🕳️ it **squeezes through holes smaller than itself**
 - 🗺️ **4 zones**, each tests one thing
 - 🤖 a **bot plays every zone** to check you can actually finish it
-- 🧪 **84 tests**, all green
+- 🧪 **92 tests**, all green
 
 ## ▶️ Play it
 
@@ -112,7 +112,7 @@ That's why it doesn't tunnel through walls or explode.
 
 ## 🧪 Tests
 
-**84 tests**, and some of them are a **bot** that runs the real level on the real physics:
+**92 tests**, and some of them are a **bot** that runs the real level on the real physics:
 hold right, jump at walls and gaps. If the bot can't finish a zone, the zone is broken.
 
 ```
