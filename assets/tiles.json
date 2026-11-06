@@ -1,0 +1,59 @@
+{
+  "cell": 16,
+  "sheet": "tiles.png",
+  "tiles": {
+    "0": {
+      "name": "grass_top",
+      "type": "solid"
+    },
+    "1": {
+      "name": "dirt",
+      "type": "solid"
+    },
+    "2": {
+      "name": "ceiling_stub",
+      "type": "solid",
+      "note": "only the top 8 px are solid"
+    },
+    "3": {
+      "name": "bounce_pad",
+      "type": "bounce"
+    },
+    "4": {
+      "name": "slope_up",
+      "type": "slope",
+      "note": "rises to the right; solid where x + y >= 15"
+    },
+    "5": {
+      "name": "slope_down",
+      "type": "slope",
+      "note": "falls to the right; solid where x <= y"
+    }
+  },
+  "crusher": {
+    "file": "crusher.png",
+    "size": [
+      32,
+      32
+    ]
+  },
+  "face": {
+    "file": "face.png",
+    "size": [
+      12,
+      8
+    ],
+    "pivot": [
+      6,
+      4
+    ]
+  },
+  "background": {
+    "file": "bg.png",
+    "size": [
+      480,
+      240
+    ],
+    "tiles_horizontally": true
+  }
+}

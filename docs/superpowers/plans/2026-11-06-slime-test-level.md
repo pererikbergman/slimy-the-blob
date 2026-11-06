@@ -116,11 +116,11 @@ Built in `TestLevel` with `LevelMap`, 240×24 tiles, floor on rows 20–23, wall
 
 ### Task 8: Pixel art (pixel-graphics skill)
 Invoke the `pixel-graphics` skill with this brief; keep scripts and versions under `art/`:
-- [ ] `assets/tiles.png`: 7 cells of 16×16 in one row, light from top-left, 5-tone ramps: 0 grass-top ground, 1 dirt fill (seamless), 2 ceiling stub (top 8 px stone, bottom transparent), 3 bounce pad (orange spring, surface at tile top), 4 `/` slope, 5 `\` slope, 6 crusher metal block. Ship `assets/tiles.json` naming each index
-- [ ] `assets/face.png`: 12×8 symmetric slime face (two eyes, small mouth), transparent background
-- [ ] `assets/bg.png`: 480×240 sky with distant hills, tileable horizontally
-- [ ] Verify sheet size = 7×16 by script; view every deliverable
-- [ ] Commit: "Add tileset, face and background art"
+- [x] `assets/tiles.png`: 6 cells of 16×16 in one row, light from top-left, 5-tone ramps: 0 grass-top ground, 1 dirt fill (seamless), 2 ceiling stub (top 8 px stone, bottom transparent), 3 bounce pad (orange spring, surface at tile top), 4 `/` slope, 5 `\` slope; plus `assets/crusher.png`, a 32×32 hazard-striped metal block (a 2×2 block cannot be tiled from one bordered cell). Ship `assets/tiles.json` naming each index
+- [x] `assets/face.png`: 12×8 symmetric slime face (two eyes, small mouth), transparent background
+- [x] `assets/bg.png`: 480×240 sky with distant hills, tileable horizontally
+- [x] Verify sheet size = 6×16 by script; view every deliverable
+- [x] Commit: "Add tileset, face and background art"
 
 ### Task 9: SlimePainter
 No unit test (needs a canvas); verified by screenshot in Task 10:

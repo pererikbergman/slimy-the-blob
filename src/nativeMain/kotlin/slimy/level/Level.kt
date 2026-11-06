@@ -7,7 +7,7 @@ import slimy.physics.Tuning
 import kotlin.math.PI
 import kotlin.math.cos
 
-/** Indexes into `tiles.png`, one 16 x 16 cell each. */
+/** Indexes into `tiles.png`, one 16 x 16 cell each. The crusher has its own picture, `crusher.png`. */
 object Tiles {
     const val GRASS = 0
     const val DIRT = 1
@@ -15,7 +15,6 @@ object Tiles {
     const val PAD = 3
     const val SLOPE_UP = 4
     const val SLOPE_DOWN = 5
-    const val CRUSHER = 6
 }
 
 /** A tile to draw: its cell and which cell of the tile sheet to draw it with. */
