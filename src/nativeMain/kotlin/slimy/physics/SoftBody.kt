@@ -148,6 +148,11 @@ class SoftBody private constructor(
         for (i in 0 until size) addVelocity(i, dx, dy, h)
     }
 
+    /** Sets the vertical velocity of particle [i] to [dy] units per second, for a substep of [h] seconds. */
+    fun setVelocityY(i: Int, dy: Float, h: Float) {
+        prevY[i] = y[i] - dy * h
+    }
+
     fun velocityX(i: Int, h: Float): Float = (x[i] - prevX[i]) / h
 
     fun velocityY(i: Int, h: Float): Float = (y[i] - prevY[i]) / h

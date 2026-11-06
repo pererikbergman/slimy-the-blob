@@ -82,13 +82,13 @@ Tests first, in `SolidsTest`, each placing one particle with a known previous po
 
 ### Task 4: Slime controller (TDD)
 Tests first, in `SlimeTest`, on a 40×20 grid with a floor:
-- [ ] Dropped slime settles on the floor: grounded, no ring particle below the floor top
-- [ ] **Input latency:** grounded slime with `jumpPressed` set rises on the very next `step()`, and the press is consumed
-- [ ] Jump lifts the base at least two tiles with jump held
-- [ ] Holding right moves the centroid right; releasing stops it within ~1.5 s
-- [ ] A bounce pad throws the slime well above jump height and sets `hasBounced`
-- [ ] Implement `SlimeInput`, `Slime.step()`: jump buffer/coyote evaluated once per step, impulse to all particles with extra lift for floor-contact particles (PRD §2.2), then N substeps of integrate → clamp speeds → interleaved relax/collide → grounded + friction + bounce detection; `facing`, `hasJumped/Landed/Bounced`, `reset(x, y)`
-- [ ] Commit: "Add slime movement, jumping and bouncing"
+- [x] Dropped slime settles on the floor: grounded, no ring particle below the floor top
+- [x] **Input latency:** grounded slime with `jumpPressed` set rises on the very next `step()`, and the press is consumed
+- [x] Jump lifts the base at least two tiles with jump held
+- [x] Holding right moves the centroid right; releasing stops it within ~1.5 s
+- [x] A bounce pad throws the slime well above jump height and sets `hasBounced`
+- [x] Implement `SlimeInput`, `Slime.step()`: jump buffer/coyote evaluated once per step, impulse to all particles with extra lift for floor-contact particles (PRD §2.2), then N substeps of integrate → clamp speeds → interleaved relax/collide → grounded + friction + bounce detection; `facing`, `hasJumped/Landed/Bounced`, `reset(x, y)`
+- [x] Commit: "Add slime movement, jumping and bouncing"
 
 ### Task 5: Acceptance tests (PRD §4) and tuning
 In `AcceptanceTest`, geometry built from `SolidGrid`:
