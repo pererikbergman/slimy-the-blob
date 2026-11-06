@@ -29,6 +29,12 @@ private const val ZOOM = 3f
 /** How much of the camera's movement the sky follows: less than 1 so it seems far away. */
 private const val SKY_PARALLAX = 0.4f
 
+/** The keys that go to zone 1, 2, ...; a level with more zones than keys leaves the rest unbound. */
+private val ZONE_KEYS = listOf(
+    Scancode.DIGIT_1, Scancode.DIGIT_2, Scancode.DIGIT_3, Scancode.DIGIT_4, Scancode.DIGIT_5,
+    Scancode.DIGIT_6, Scancode.DIGIT_7, Scancode.DIGIT_8, Scancode.DIGIT_9,
+)
+
 private const val SKY_WIDTH = 480f
 private const val SKY_HEIGHT = 240f
 
@@ -101,10 +107,9 @@ fun App.installGame() {
         if (keyboard.isJustPressed(Scancode.ESCAPE)) app.quit()
         if (keyboard.isJustPressed(Scancode.F2)) showParticles = !showParticles
         if (keyboard.isJustPressed(Scancode.R)) restartInZone(session.zone?.id)
-        if (keyboard.isJustPressed(Scancode.DIGIT_1)) restartInZone('A')
-        if (keyboard.isJustPressed(Scancode.DIGIT_2)) restartInZone('B')
-        if (keyboard.isJustPressed(Scancode.DIGIT_3)) restartInZone('C')
-        if (keyboard.isJustPressed(Scancode.DIGIT_4)) restartInZone('D')
+        for ((index, key) in ZONE_KEYS.withIndex()) {
+            if (keyboard.isJustPressed(key)) level.zoneByNumber(index + 1)?.let { restartInZone(it.id) }
+        }
 
         session.setMove((keyboard.axis(Scancode.LEFT, Scancode.RIGHT) + keyboard.axis(Scancode.A, Scancode.D)).coerceIn(-1f, 1f))
         session.setJumpHeld(keyboard.isDown(Scancode.SPACE) || keyboard.isDown(Scancode.UP) || keyboard.isDown(Scancode.W))
@@ -161,7 +166,7 @@ fun App.installGame() {
         val zone = session.zone
         if (zone != null) canvas.drawText(font, "ZONE ${zone.id}: ${zone.name}", x = 16f, y = 14f, scale = 3f, layer = 1, shadow = shadow)
         canvas.drawText(font, "A/D or arrows: move   Space/W/Up: jump   Esc: quit", x = 16f, y = app.window.height - 56f, scale = 2f, layer = 1, shadow = shadow)
-        canvas.drawText(font, "1-4: go to zone   R: restart zone   F2: particles   F3: stats", x = 16f, y = app.window.height - 32f, scale = 2f, layer = 1, shadow = shadow)
+        canvas.drawText(font, "1-${level.zones.size}: go to zone   R: restart zone   F2: particles   F3: stats", x = 16f, y = app.window.height - 32f, scale = 2f, layer = 1, shadow = shadow)
         if (session.isFinished) {
             canvas.drawText(font, "LEVEL COMPLETE", x = app.window.width / 2f, y = app.window.height / 2f - 24f, scale = 6f, align = TextAlign.CENTER, layer = 2, shadow = shadow)
         }

@@ -38,11 +38,20 @@ private object Legend {
     const val START = 'S'
     const val FINISH = 'F'
     const val FIRST_ZONE = '1'
-    const val LAST_ZONE = '4'
+
+    /**
+     * The zones, in order. A zone's sign on the map is the digit at its position here counting from
+     * [FIRST_ZONE], its id is the letter at that position counting from `'A'`, and its name is the entry.
+     * Adding a zone means adding a name here and a sign on the map; nothing else restates the list.
+     */
+    val ZONE_NAMES = listOf("The Calibration Chamber", "The Vertical Ascent", "The Squeeze Corridor", "The Kinetic Gauntlet")
+
+    /** The map characters that are zone signs. */
+    val ZONE_SIGNS: CharRange = FIRST_ZONE until FIRST_ZONE + ZONE_NAMES.size
 
     /** Whether a cell with this character has no solid in it, so something that falls through the cell keeps falling. */
     fun isOpen(char: Char): Boolean =
-        char == AIR || char == CRUSHER || char == CURTAIN || char == START || char == FINISH || char in FIRST_ZONE..LAST_ZONE
+        char == AIR || char == CRUSHER || char == CURTAIN || char == START || char == FINISH || char in ZONE_SIGNS
 }
 
 /** A curtain of hanging red slime from [left] to [right], hanging from height [top]. */
@@ -83,7 +92,7 @@ class Crusher(val solid: Solid, private val restTop: Float, private val travel: 
  * | `M` | top-left tile of a crusher, which needs 2 x 2 free tiles and a floor below |
  * | `r` | air where a curtain of red slime hangs; a run of them in a row is one curtain, pinned under the tiles above |
  * | `S` `F` | where the slime starts and where the level ends |
- * | `1` to `4` | the sign that opens zone A to D |
+ * | `1`, `2`, ... | the sign that opens zone A, B, ...; as many as [Legend.ZONE_NAMES] has names |
  */
 class Level private constructor(
     val cols: Int,
@@ -107,20 +116,16 @@ class Level private constructor(
         for (crusher in crushers) crusher.moveTo(seconds)
     }
 
-    /** The zone with this [id], `'A'` to `'D'`, or `null` if the level has none. */
+    /** The zone with this [number], 1 for the first zone, or `null` if the level has no such zone. */
+    fun zoneByNumber(number: Int): Zone? = zone('A' + (number - 1))
+
+    /** The zone with this [id], or `null` if the level has none. */
     fun zone(id: Char): Zone? = zones.firstOrNull { it.id == id }
 
     /** The zone that holds [x]: the last sign at or before it. */
     fun zoneAt(x: Float): Zone? = zones.lastOrNull { it.x <= x } ?: zones.firstOrNull()
 
     companion object {
-        private val ZONE_NAMES = mapOf(
-            'A' to "The Calibration Chamber",
-            'B' to "The Vertical Ascent",
-            'C' to "The Squeeze Corridor",
-            'D' to "The Kinetic Gauntlet",
-        )
-
         /** Reads [rows], top row first. Every row must be as long as the first and use only the characters above. */
         fun parse(rows: List<String>): Level {
             val cols = rows.firstOrNull()?.length ?: 0
@@ -151,9 +156,9 @@ class Level private constructor(
                     Legend.PAD -> solid(col, row, Tiles.PAD, bouncy = true)
                     Legend.START -> start = spot
                     Legend.FINISH -> finish = spot
-                    in Legend.FIRST_ZONE..Legend.LAST_ZONE -> {
-                        val id = 'A' + (char - Legend.FIRST_ZONE)
-                        zones.add(Zone(id, ZONE_NAMES.getValue(id), spot.x, spot.y))
+                    in Legend.ZONE_SIGNS -> {
+                        val index = char - Legend.FIRST_ZONE
+                        zones.add(Zone('A' + index, Legend.ZONE_NAMES[index], spot.x, spot.y))
                     }
                     Legend.CRUSHER -> crushers.add(crusherAt(rows, col, row, grid))
                     Legend.CURTAIN -> if (col == 0 || rows[row][col - 1] != Legend.CURTAIN) {

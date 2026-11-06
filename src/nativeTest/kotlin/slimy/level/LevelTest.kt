@@ -112,6 +112,28 @@ class LevelTest {
     }
 
     @Test
+    fun everyDigitIsEitherANamedZoneSignOrAnUnknownTileAndNeverACrash() {
+        for (digit in '1'..'9') {
+            val result = runCatching { Level.parse(listOf("$digit")) }
+            val level = result.getOrNull()
+            if (level != null) {
+                assertTrue(level.zones.single().name.isNotBlank(), "zone sign $digit has no name")
+            } else {
+                assertTrue(result.exceptionOrNull() is IllegalArgumentException, "sign $digit failed with ${result.exceptionOrNull()}")
+            }
+        }
+    }
+
+    @Test
+    fun zonesAreFoundByTheirNumberAndAnUnknownNumberHasNoZone() {
+        val level = Level.parse(listOf("1234"))
+        assertEquals('A', level.zoneByNumber(1)!!.id)
+        assertEquals('D', level.zoneByNumber(4)!!.id)
+        assertNull(level.zoneByNumber(5))
+        assertNull(level.zoneByNumber(0))
+    }
+
+    @Test
     fun aCrusherLooksPastOtherOpenMapCharactersForItsFloor() {
         val level = Level.parse(listOf("M.", "..", "S.", "##"))
         val crusher = level.crushers.single()
