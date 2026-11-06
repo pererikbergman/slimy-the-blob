@@ -40,8 +40,9 @@ Falling out of the level puts you back at the start of the zone you were in.
 | **C** The Squeeze Corridor | 100-159 | Three tunnels two tiles, one tile and half a tile high (60% of the slime's height), steps up to a deck with a one-tile shaft (60% of its width), and a corridor out under the deck. |
 | **D** The Kinetic Gauntlet | 160-239 | A six-tile 45 degree hill, two bounce pads under a ledge only a bounce reaches (with a curtain of red slime hanging under it that you can push through), and a crusher that comes down to eight units above the ground. |
 
-Stand on the deck's shaft in zone C and let the slime sink through under its own weight; the deck
-ends in a wall, so that is the way on.
+Hop onto the deck's shaft in zone C and the slime sinks through under its own weight; the deck
+ends in a wall, so that is the way on. A slime walking across it bridges the gap, and one that is
+stopped dead on it perches on the rim, so land on it from a jump.
 
 ## Try it without a keyboard
 
@@ -83,7 +84,7 @@ SLIME_ZONE=C ./gradlew run -Pklyph.autopilot=1                       # start in 
 
 Twenty-two particles form a half-disc outline around one core particle. Stiff distance constraints
 hold the outline, soft ones tie it to the core and an area constraint keeps the volume, all XPBD,
-so how soft they are does not depend on the iteration count. The core is thirty times heavier than
+so how soft they are does not depend on the iteration count. The core is thirty-four times heavier than
 an outline particle and stands for the slime's insides: when the outline is held on the rim of a
 gap, its weight drags the body through. `Tuning.kt` explains each number and what moving it does.
 

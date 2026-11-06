@@ -11,11 +11,11 @@ class SoftBodyTest {
     private fun body(): SoftBody = SoftBody.semiDisc(Tuning.RADIUS, Tuning.ARC_SEGMENTS, Tuning.BASE_SEGMENTS)
 
     @Test
-    fun theRestShapeIsAHalfDiscAsWideAsTwiceItsRadius() {
+    fun theRestShapeIsADomeAsWideAsTwiceItsRadiusAndHeightScaleTimesItsRadiusTall() {
         val b = body()
         assertEquals(Tuning.ARC_SEGMENTS + Tuning.BASE_SEGMENTS, b.ringCount)
         assertEquals(2 * Tuning.RADIUS, b.maxX() - b.minX(), 0.01f)
-        assertEquals(Tuning.RADIUS, b.maxY() - b.minY(), 0.01f)
+        assertEquals(Tuning.RADIUS * Tuning.HEIGHT_SCALE, b.maxY() - b.minY(), 0.01f)
     }
 
     @Test

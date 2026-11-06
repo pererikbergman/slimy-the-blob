@@ -65,12 +65,12 @@ class PlaythroughTest {
     fun zoneCTunnelsAndStepsLeadUpToTheDeck() = assertReached(play('C', 149), 149, 'C')
 
     @Test
-    fun aSlimeSittingOnTheDeckShaftSinksThroughIt() {
+    fun aSlimeThatHopsOntoTheDeckShaftSinksThroughIt() {
         val shaftMiddle = 146.5f * tile
         val deckTop = 16f * tile
-        val slime = Slime(level.grid, shaftMiddle, deckTop)
+        // A hop's height above the rim: it lands with nothing pushing it and must go down under its own weight.
+        val slime = Slime(level.grid, shaftMiddle, deckTop - 24f)
         var step = 0
-        // Lands on its rim at rest, with nothing pushing it, and must go down under its own weight.
         while (step < 900 && slime.body.centerY() < 18f * tile) {
             level.advance(dt)
             slime.step(SlimeInput(), dt)

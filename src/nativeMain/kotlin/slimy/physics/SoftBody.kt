@@ -252,23 +252,29 @@ class SoftBody private constructor(
         /**
          * A half-disc of [radius]: [arcSegments] segments over the dome from the left end to the
          * right, then [baseSegments] along the flat base back to the left, with the core where the
-         * half-disc's centre of mass is. The base lies on y = 0 and the middle on x = 0; y grows down.
+         * half-disc's centre of mass is, with the dome stretched [heightScale] times taller. The base lies on y = 0 and the middle on x = 0; y grows down.
          */
-        fun semiDisc(radius: Float, arcSegments: Int, baseSegments: Int, coreMass: Float = Tuning.CORE_MASS): SoftBody {
+        fun semiDisc(
+            radius: Float,
+            arcSegments: Int,
+            baseSegments: Int,
+            coreMass: Float = Tuning.CORE_MASS,
+            heightScale: Float = Tuning.HEIGHT_SCALE,
+        ): SoftBody {
             val ring = arcSegments + baseSegments
             val xs = FloatArray(ring + 1)
             val ys = FloatArray(ring + 1)
             for (i in 0..arcSegments) {
                 val angle = PI.toFloat() + PI.toFloat() * i / arcSegments
                 xs[i] = cos(angle) * radius
-                ys[i] = sin(angle) * radius
+                ys[i] = sin(angle) * radius * heightScale
             }
             for (j in 1 until baseSegments) {
                 xs[arcSegments + j] = radius - 2f * radius * j / baseSegments
                 ys[arcSegments + j] = 0f
             }
             xs[ring] = 0f
-            ys[ring] = -4f * radius / (3f * PI.toFloat())
+            ys[ring] = -4f * radius / (3f * PI.toFloat()) * heightScale
             return SoftBody(ring, xs, ys, coreMass)
         }
     }

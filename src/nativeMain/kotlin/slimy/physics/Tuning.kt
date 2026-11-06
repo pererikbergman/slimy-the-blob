@@ -12,6 +12,12 @@ object Tuning {
     /** Radius of the resting half-disc: the slime is 2 * RADIUS wide and RADIUS tall. */
     const val RADIUS = 13.3f
 
+    /**
+     * How much taller than a half-disc the resting dome is: 1 is a half-circle. The weight of the core
+     * flattens it again, so at 1.3 the slime rests about 31 wide and 15 tall.
+     */
+    const val HEIGHT_SCALE = 1.3f
+
     /** Ring segments along the dome, and along the flat base. */
     const val ARC_SEGMENTS = 14
     const val BASE_SEGMENTS = 8
@@ -39,14 +45,17 @@ object Tuning {
      */
     const val EDGE_COMPLIANCE = 0.00002f
     const val SPOKE_COMPLIANCE = 0.0005f
-    const val AREA_COMPLIANCE = 0.001f
+    const val AREA_COMPLIANCE = 0.0004f
 
     /**
      * How many times heavier than an outline particle the core is. It stands for the slime's
-     * insides, and its weight is what pulls the body through a gap narrower than itself. At 16 or
-     * less a slime resting on a one-tile shaft perches on the rim for good; from 20 it sinks in.
+     * insides, and its weight is what pulls the body through a gap narrower than itself. It is also
+     * what flattens the dome, so rounder slimes and heavier cores pull against each other: with this
+     * shape a slime that lands on a one-tile shaft from a hop sinks through, but one that is placed
+     * on it at rest perches on the rim (it did sink from rest when the dome was lower and the core
+     * 30; see AcceptanceTest and PlaythroughTest).
      */
-    const val CORE_MASS = 30f
+    const val CORE_MASS = 34f
 
     /**
      * Horizontal acceleration on the ground and in the air, and the speed input cannot push past.
