@@ -73,4 +73,16 @@ object Tuning {
     /** Grace after leaving the ground in which a jump still works, and before landing in which an early press still counts. */
     const val COYOTE_SECONDS = 0.1f
     const val JUMP_BUFFER_SECONDS = 0.1f
+
+    /** Particles down each strand of a hanging curtain, the first pinned to the ledge, and the distance between neighbours. */
+    const val CURTAIN_ROWS = 8
+    const val CURTAIN_SEGMENT = 10f
+
+    /** A curtain falls gently and loses a little speed each substep, so it swings and settles. */
+    const val CURTAIN_GRAVITY = 900f
+    const val CURTAIN_DAMPING = 0.985f
+
+    /** How hard the links between neighbouring strands pull, 0 to 1; low, so the curtain drapes like cloth. */
+    const val CURTAIN_SIDE_STIFFNESS = 0.25f
+    const val CURTAIN_ITERATIONS = 6
 }

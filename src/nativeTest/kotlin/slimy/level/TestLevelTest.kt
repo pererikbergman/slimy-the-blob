@@ -55,6 +55,14 @@ class TestLevelTest {
     }
 
     @Test
+    fun aCurtainOfRedSlimeHangsUnderTheLedgeAfterThePads() {
+        val curtain = level.curtains.single()
+        val ledge = assertNotNull(level.grid.at((curtain.left / 16f).toInt(), 14))
+        assertEquals(curtain.top, ledge.bottom)
+        assertTrue(curtain.left > 193 * 16f)
+    }
+
+    @Test
     fun theKineticGauntletHasPadsAndACrusher() {
         val pads = level.tiles.count { it.tile == Tiles.PAD }
         assertEquals(2, pads)

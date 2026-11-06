@@ -97,6 +97,21 @@ class LevelTest {
     }
 
     @Test
+    fun aRunOfHangingMarksIsOneCurtainHangingFromTheTopOfItsRow() {
+        val level = Level.parse(listOf("####..", "..rrr.", "......"))
+        val curtain = level.curtains.single()
+        assertEquals(32f, curtain.left)
+        assertEquals(80f, curtain.right)
+        assertEquals(16f, curtain.top)
+    }
+
+    @Test
+    fun separateRunsAreSeparateCurtains() {
+        val level = Level.parse(listOf("r.rr"))
+        assertEquals(2, level.curtains.size)
+    }
+
+    @Test
     fun aCrusherWithNoFloorBelowItIsAMistake() {
         assertFailsWith<IllegalArgumentException> { Level.parse(listOf("M.", "..", "..")) }
     }

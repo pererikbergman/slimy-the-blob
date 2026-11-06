@@ -19,9 +19,11 @@ import klyph.text.Text
 import klyph.text.TextAlign
 import klyph.text.TextShadow
 import slimy.level.TestLevel
+import slimy.physics.Curtain
 import slimy.physics.Slime
 import slimy.physics.SlimeInput
 import slimy.physics.Tuning
+import slimy.render.CurtainPainter
 import slimy.render.SlimePainter
 
 /** Camera zoom: 3 points per world unit shows 427 x 240 units, 27 x 15 tiles, in a 1280 x 720 window. */
@@ -81,6 +83,10 @@ fun App.installGame() {
     val painter = SlimePainter(assets.whitePixel, assets.texture("face.png", SamplerFilter.NEAREST).asRegion())
     val input = SlimeInput()
 
+    // Curtains of red slime that the player can push through.
+    val curtains = level.curtains.map { Curtain(it.left, it.right, it.top) }
+    val curtainPainter = CurtainPainter(assets.whitePixel, assets.disc(9), assets.disc(12))
+
     camera.zoom = ZOOM
     camera.bounds = Rect(x = 0f, y = 0f, width = level.width, height = level.height)
 
@@ -127,6 +133,7 @@ fun App.installGame() {
         jumpWaiting = false
         level.advance(dt)
         slime.step(input, dt)
+        for (curtain in curtains) curtain.step(slime.body, dt)
         if (slime.body.centerY() > level.height + 4 * tile) restartInZone(level.zoneAt(slime.body.centerX())?.id)
     }
 
@@ -160,6 +167,7 @@ fun App.installGame() {
             )
         }
 
+        for (curtain in curtains) curtainPainter.paint(canvas, curtain)
         painter.paint(canvas, slime, showParticles)
 
         val zone = level.zoneAt(slime.body.centerX())

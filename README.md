@@ -38,7 +38,7 @@ Falling out of the level puts you back at the start of the zone you were in.
 | **A** The Calibration Chamber | 0-39 | Flat ground, a one-tile step and a two-tile block: movement, friction and the resting shape. |
 | **B** The Vertical Ascent | 40-99 | Pits two, three and four tiles wide, steps up and down, a low wall: jump height and air control. |
 | **C** The Squeeze Corridor | 100-159 | Three tunnels two tiles, one tile and half a tile high (60% of the slime's height), steps up to a deck with a one-tile shaft (60% of its width), and a corridor out under the deck. |
-| **D** The Kinetic Gauntlet | 160-239 | A six-tile 45 degree hill, two bounce pads under a ledge only a bounce reaches, and a crusher that comes down to eight units above the ground. |
+| **D** The Kinetic Gauntlet | 160-239 | A six-tile 45 degree hill, two bounce pads under a ledge only a bounce reaches (with a curtain of red slime hanging under it that you can push through), and a crusher that comes down to eight units above the ground. |
 
 Stand on the deck's shaft in zone C and let the slime sink through under its own weight; the deck
 ends in a wall, so that is the way on.
@@ -61,6 +61,7 @@ SLIME_ZONE=C ./gradlew run -Pklyph.autopilot=1                       # start in 
 |---|---|
 | `physics/AcceptanceTest` | The PRD's criteria: no blow-up or tearing in a one-tile shaft, passing a gap 60% of its size and recovering its shape, no particle left inside a solid after long falls or corner landings. |
 | `physics/SlimeTest` | A jump pressed this step is rising by the end of it, jump height, buffered jumps, top speed, bounce pads. |
+| `physics/CurtainTest` | The hanging red slime hangs straight, is pushed out of the slime's body, swings when it is walked through and settles again. |
 | `physics/SoftBodyTest`, `SolidsTest` | The constraints, and pushing particles out of boxes, slopes and stubs. |
 | `level/LevelTest`, `TestLevelTest` | Reading the tile map; the shape of the four zones. |
 | `level/PlaythroughTest` | A bot plays every zone on the real level and physics: hold right, jump at walls and pits. |
@@ -71,9 +72,9 @@ SLIME_ZONE=C ./gradlew run -Pklyph.autopilot=1                       # start in 
 | Path | Contents |
 |---|---|
 | `src/nativeMain/kotlin/slimy/Main.kt`, `Game.kt` | The window, camera, input and HUD. |
-| `src/nativeMain/kotlin/slimy/physics/` | `Tuning` (every number that decides how the slime feels), `SoftBody`, `Solids`, `Slime`. |
+| `src/nativeMain/kotlin/slimy/physics/` | `Tuning` (every number that decides how the slime feels), `SoftBody`, `Solids`, `Slime`, `Curtain` (the hanging red slime). |
 | `src/nativeMain/kotlin/slimy/level/` | `LevelMap` and `Level` (tile characters in, solids and sprites out) and `TestLevel`. |
-| `src/nativeMain/kotlin/slimy/render/` | `SlimePainter` and `Scanline`. |
+| `src/nativeMain/kotlin/slimy/render/` | `SlimePainter`, `CurtainPainter`, `Scanline`, `Lines`. |
 | `assets/` | `tiles.png` and `tiles.json`, `crusher.png`, `face.png`, `bg.png`. |
 | `art/tiles/draw.py` | Draws all the art; every render is kept as `art/<set>/v<N>_*.png`. |
 | `docs/superpowers/plans/` | The implementation plan this was built from. |

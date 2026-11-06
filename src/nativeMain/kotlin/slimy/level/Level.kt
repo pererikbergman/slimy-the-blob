@@ -26,6 +26,9 @@ data class Spot(val x: Float, val y: Float)
 /** A sign that names the part of the level to its right, up to the next sign. */
 class Zone(val id: Char, val name: String, val x: Float, val y: Float)
 
+/** A curtain of hanging red slime from [left] to [right], hanging from height [top]. */
+class CurtainSpec(val left: Float, val right: Float, val top: Float)
+
 /**
  * A 2 x 2 tile block that swings down toward the floor and back up. It rests at the top of its
  * swing where the map has its `M` and comes down to leave [Crusher.GAP] above the floor.
@@ -59,6 +62,7 @@ class Crusher(val solid: Solid, private val restTop: Float, private val travel: 
  * | `/` `\` | 45 degree slope that rises or falls to the right |
  * | `J` | bounce pad |
  * | `M` | top-left tile of a crusher, which needs 2 x 2 free tiles and a floor below |
+ * | `r` | air where a curtain of red slime hangs; a run of them in a row is one curtain, pinned under the tiles above |
  * | `S` `F` | where the slime starts and where the level ends |
  * | `1` to `4` | the sign that opens zone A to D |
  */
@@ -71,6 +75,7 @@ class Level private constructor(
     val finish: Spot?,
     val zones: List<Zone>,
     val crushers: List<Crusher>,
+    val curtains: List<CurtainSpec>,
 ) {
     private var seconds = 0f
 
@@ -105,6 +110,7 @@ class Level private constructor(
             val tiles = ArrayList<PlacedTile>()
             val zones = ArrayList<Zone>()
             val crushers = ArrayList<Crusher>()
+            val curtains = ArrayList<CurtainSpec>()
             var start: Spot? = null
             var finish: Spot? = null
             val t = Tuning.TILE
@@ -130,16 +136,21 @@ class Level private constructor(
                         zones.add(Zone(id, ZONE_NAMES.getValue(id), spot.x, spot.y))
                     }
                     'M' -> crushers.add(crusherAt(rows, col, row, grid))
+                    'r' -> if (col == 0 || rows[row][col - 1] != 'r') {
+                        var end = col
+                        while (end + 1 < cols && rows[row][end + 1] == 'r') end++
+                        curtains.add(CurtainSpec(col * t, (end + 1) * t, row * t))
+                    }
                     else -> throw IllegalArgumentException("Unknown tile '$char' at ($col, $row)")
                 }
             }
-            return Level(cols, rows.size, grid, tiles, start, finish, zones, crushers)
+            return Level(cols, rows.size, grid, tiles, start, finish, zones, crushers, curtains)
         }
 
         private fun crusherAt(rows: List<String>, col: Int, row: Int, grid: SolidGrid): Crusher {
             val t = Tuning.TILE
             var floorRow = row + 2
-            while (floorRow < rows.size && rows[floorRow][col] in ".MSF1234") floorRow++
+            while (floorRow < rows.size && rows[floorRow][col] in ".MSF1234r") floorRow++
             require(floorRow < rows.size) { "The crusher at ($col, $row) has no floor below it" }
             val restTop = row * t
             val travel = floorRow * t - Crusher.GAP - (restTop + 2 * t)

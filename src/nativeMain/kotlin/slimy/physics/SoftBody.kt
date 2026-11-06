@@ -162,6 +162,17 @@ class SoftBody private constructor(
         return sum / 2f
     }
 
+    /** Whether the point ([px], [py]) is inside the outline. */
+    fun contains(px: Float, py: Float): Boolean {
+        var inside = false
+        var j = ringCount - 1
+        for (i in 0 until ringCount) {
+            if ((y[i] > py) != (y[j] > py) && px < (x[j] - x[i]) * (py - y[i]) / (y[j] - y[i]) + x[i]) inside = !inside
+            j = i
+        }
+        return inside
+    }
+
     /** Area enclosed by the outline. */
     fun area(): Float = signedArea() * areaSign
 

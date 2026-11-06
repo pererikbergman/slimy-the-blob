@@ -71,7 +71,8 @@ object TestLevel {
 
     /**
      * Zone D, columns 160 to 239: a six-tile hill of 45 degree slopes, two bounce pads under a ledge
-     * only a bounce reaches, and a crusher that swings down to eight units above the ground.
+     * only a bounce reaches with a curtain of red slime hanging under it, and a crusher that swings
+     * down to eight units above the ground.
      */
     private fun kineticGauntlet(map: LevelMap) {
         map.put(161, 19, '4')
@@ -87,6 +88,7 @@ object TestLevel {
         map.put(191, GROUND, 'J')
         map.put(193, GROUND, 'J')
         map.fill(195, 13, 202, 14, '#')
+        map.fill(195, 15, 202, 15, 'r')
         map.fill(206, 0, 215, 10, '#')
         map.put(210, 11, 'M')
         map.put(232, 19, 'F')

@@ -6,10 +6,8 @@ import klyph.render.DrawSpace
 import klyph.render.TextureRegion
 import slimy.physics.Slime
 import slimy.physics.Tuning
-import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.sqrt
 
 /**
  * Draws the slime on the canvas, in world space, from its particles: the inside filled one pixel
@@ -42,19 +40,7 @@ class SlimePainter(private val pixel: TextureRegion, private val face: TextureRe
         val n = body.ringCount
         for (i in 0 until n) {
             val j = if (i + 1 == n) 0 else i + 1
-            val dx = body.x[j] - body.x[i]
-            val dy = body.y[j] - body.y[i]
-            canvas.drawSprite(
-                pixel,
-                x = (body.x[i] + body.x[j]) / 2f,
-                y = (body.y[i] + body.y[j]) / 2f,
-                width = sqrt(dx * dx + dy * dy) + 1f,
-                height = 1.5f,
-                rotation = atan2(dy, dx),
-                color = OUTLINE,
-                layer = OUTLINE_LAYER,
-                space = DrawSpace.WORLD,
-            )
+            canvas.drawLine(pixel, body.x[i], body.y[i], body.x[j], body.y[j], 1.5f, OUTLINE, OUTLINE_LAYER)
         }
 
         canvas.drawSprite(
