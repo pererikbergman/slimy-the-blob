@@ -107,12 +107,12 @@ In `AcceptanceTest`, geometry built from `SolidGrid`:
 
 ### Task 7: The test level
 Built in `TestLevel` with `LevelMap`, 240×24 tiles, floor on rows 20–23, walls at both ends:
-- [ ] **Zone A (cols 0–39):** flat, one 2-tall block to hop, start and `1` sign
-- [ ] **Zone B (40–99):** pits of 2, 3 and 4 tiles; three step platforms each 2 tiles higher; a lower step and a short wall before the ground resumes (no dead-end pits)
-- [ ] **Zone C (100–159):** three tunnels with 2 tiles, 1 tile and half a tile (`v`) of clearance; steps up to a deck with a 1-tile shaft through it, a wall that forces the drop, and a 2-tall corridor out to Zone D
-- [ ] **Zone D (160–239):** 6-tile `/` hill, plateau, `\` down; two `J` pads in the floor with a ledge 7 tiles up only a bounce reaches; crusher `M` under a ceiling block; `F` sign
-- [ ] Test: `TestLevel` parses, 240×24, zones `1234` in x order, start and finish present, > 1000 tiles
-- [ ] Commit: "Lay out the four test zones"
+- [x] **Zone A (cols 0–39):** flat, one 2-tall block to hop, start and `1` sign
+- [x] **Zone B (40–99):** pits of 2, 3 and 4 tiles; three step platforms each 2 tiles higher; a lower step and a short wall before the ground resumes (no dead-end pits)
+- [x] **Zone C (100–159):** three tunnels with 2 tiles, 1 tile and half a tile (`v`) of clearance; steps up to a deck with a 1-tile shaft through it, a wall that forces the drop, and a 2-tall corridor out to Zone D
+- [x] **Zone D (160–239):** 6-tile `/` hill, plateau, `\` down; two `J` pads in the floor with a ledge 7 tiles up only a bounce reaches; crusher `M` under a ceiling block; `F` sign
+- [x] Test: `TestLevel` parses, 240×24, zones `1234` in x order, start and finish present, > 1000 tiles
+- [x] Commit: "Lay out the four test zones"
 
 ### Task 8: Pixel art (pixel-graphics skill)
 Invoke the `pixel-graphics` skill with this brief; keep scripts and versions under `art/`:
