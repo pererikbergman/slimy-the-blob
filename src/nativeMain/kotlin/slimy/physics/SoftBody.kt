@@ -82,19 +82,19 @@ class SoftBody private constructor(
 
     /**
      * Starts a substep of [h] seconds: keeps every particle's velocity (damped), adds gravity, caps
-     * the move at [maxStep] and forgets the constraint forces of the substep before.
+     * the move at [MAX_STEP] and forgets the constraint forces of the substep before.
      */
-    fun integrate(gravity: Float, h: Float, damping: Float, maxStep: Float) {
+    private fun integrate(gravity: Float, h: Float) {
         edgeLambda.fill(0f)
         spokeLambda.fill(0f)
         areaLambda = 0f
         for (i in 0 until size) {
-            var dx = (x[i] - prevX[i]) * damping
-            var dy = (y[i] - prevY[i]) * damping + gravity * h * h
+            var dx = (x[i] - prevX[i]) * DAMPING
+            var dy = (y[i] - prevY[i]) * DAMPING + gravity * h * h
             val length = sqrt(dx * dx + dy * dy)
-            if (length > maxStep) {
-                dx *= maxStep / length
-                dy *= maxStep / length
+            if (length > MAX_STEP) {
+                dx *= MAX_STEP / length
+                dy *= MAX_STEP / length
             }
             prevX[i] = x[i]
             prevY[i] = y[i]
@@ -104,15 +104,26 @@ class SoftBody private constructor(
     }
 
     /**
-     * One pass over every constraint of the substep of [h] seconds that [integrate] began. A
-     * compliance is how far a constraint gives per unit of force; 0 is rigid.
+     * Advances the body by one substep of [h] seconds under [gravity]: it moves, then [RELAX_ITERATIONS]
+     * times its constraints are brought back toward rest and [collide] is called, so the collision step
+     * has the last word in every pass. Integrating and relaxing only work in that order, because moving
+     * forgets the constraint forces that relaxing builds up, so this is the only way to advance a body.
      */
-    fun relax(h: Float, edgeCompliance: Float, spokeCompliance: Float, areaCompliance: Float) {
-        val edgeSoftness = edgeCompliance / (h * h)
-        val spokeSoftness = spokeCompliance / (h * h)
+    fun substep(h: Float, gravity: Float, collide: () -> Unit) {
+        integrate(gravity, h)
+        repeat(RELAX_ITERATIONS) {
+            relax(h)
+            collide()
+        }
+    }
+
+    /** One pass over every constraint of the substep of [h] seconds that [integrate] began. */
+    private fun relax(h: Float) {
+        val edgeSoftness = EDGE_COMPLIANCE / (h * h)
+        val spokeSoftness = SPOKE_COMPLIANCE / (h * h)
         for (i in 0 until ringCount) pull(i, next(i), edgeRest[i], edgeSoftness, edgeLambda, i)
         for (i in 0 until ringCount) pull(i, ringCount, spokeRest[i], spokeSoftness, spokeLambda, i)
-        keepArea(areaCompliance / (h * h))
+        keepArea(AREA_COMPLIANCE / (h * h))
     }
 
     private fun weight(i: Int): Float = if (i == ringCount) coreWeight else 1f
@@ -295,6 +306,27 @@ class SoftBody private constructor(
     }
 
     companion object {
+        /** Constraint passes per substep, each followed by the collision step. */
+        const val RELAX_ITERATIONS = 6
+
+        /** Largest distance a particle may move in one substep; under half a tile so it cannot tunnel through a corner. */
+        const val MAX_STEP = 4f
+
+        /** Share of velocity kept each substep. */
+        const val DAMPING = 0.999f
+
+        /**
+         * How far each kind of constraint gives per unit of force (compliance, 0 is rigid): the ring
+         * edges, the spokes to the core and the area. Soft spokes let the slime stretch and squash,
+         * a soft area lets it sag and be squeezed, stiff edges keep the outline from tearing. These came
+         * from running AcceptanceTest over a grid of values: spokes much softer and the slime flattens
+         * under its own core and does not spring back; much stiffer and it perches on the rim of a shaft
+         * narrower than itself instead of falling in.
+         */
+        const val EDGE_COMPLIANCE = 0.00002f
+        const val SPOKE_COMPLIANCE = 0.0005f
+        const val AREA_COMPLIANCE = 0.0004f
+
         /** Radius of the resting half-disc: the slime is 2 * RADIUS wide and RADIUS tall. */
         const val RADIUS = 13.3f
 

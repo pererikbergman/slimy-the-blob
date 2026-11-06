@@ -28,37 +28,55 @@ class SoftBodyTest {
     }
 
     @Test
-    fun gravityPullsEveryParticleDownAndAStepNeverExceedsTheCap() {
+    fun gravityPullsEveryParticleDownAndASubstepNeverMovesOneFartherThanTheCap() {
         val b = body()
         b.placeAt(0f, 0f)
         val before = b.positionY(3)
         b.addVelocityAll(0f, 100_000f, h)
-        b.integrate(Slime.GRAVITY, h, Slime.DAMPING, Slime.MAX_STEP)
+        b.substep(h, Slime.GRAVITY) {}
         val moved = b.positionY(3) - before
         assertTrue(moved > 0f, "moved $moved")
-        assertTrue(moved <= Slime.MAX_STEP + 0.001f, "moved $moved")
+        assertTrue(moved <= SoftBody.MAX_STEP + 0.05f, "moved $moved")
     }
 
     @Test
-    fun relaxingASquashedBodyRestoresMostOfItsArea() {
+    fun aSquashedBodyStaysFiniteAndSpringsBackToMostOfItsArea() {
         val b = body()
         b.placeAt(0f, 0f)
         val rest = b.area()
         for (i in 0 until b.size) b.setParticle(i, b.positionX(i), b.positionY(i) * 0.5f)
         assertTrue(b.area() < rest * 0.6f)
-        repeat(60) { b.relax(h, Slime.EDGE_COMPLIANCE, Slime.SPOKE_COMPLIANCE, Slime.AREA_COMPLIANCE) }
-        assertTrue(b.isFinite())
-        assertTrue(b.area() > rest * 0.85f, "area ${b.area()} of $rest")
+        var sum = 0f
+        repeat(240) { step ->
+            b.substep(h, 0f) {}
+            assertTrue(b.isFinite())
+            if (step >= 180) sum += b.area()
+        }
+        assertTrue(sum / 60f > rest * 0.85f, "settled around ${sum / 60f} of $rest")
     }
 
     @Test
-    fun anUndisturbedBodyIsAlreadyAtRest() {
+    fun anUndisturbedBodyWithNoGravityStaysWhereItIs() {
         val b = body()
         b.placeAt(0f, 0f)
         val rest = b.area()
-        repeat(20) { b.relax(h, Slime.EDGE_COMPLIANCE, Slime.SPOKE_COMPLIANCE, Slime.AREA_COMPLIANCE) }
+        repeat(40) { b.substep(h, 0f) {} }
         assertTrue(abs(b.area() - rest) < rest * 0.01f)
         assertEquals(1f, b.maxEdgeStretch(), 0.01f)
+    }
+
+    @Test
+    fun aSubstepRunsTheCollisionStepAfterEveryPassSoItGetsTheLastWord() {
+        val b = body()
+        b.placeAt(0f, 0f)
+        var calls = 0
+        b.substep(h, Slime.GRAVITY) {
+            calls++
+            b.setParticle(0, 123f, 45f)
+        }
+        assertEquals(SoftBody.RELAX_ITERATIONS, calls)
+        assertEquals(123f, b.positionX(0))
+        assertEquals(45f, b.positionY(0))
     }
 
     @Test

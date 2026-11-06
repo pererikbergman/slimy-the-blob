@@ -17,6 +17,9 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     val body: SoftBody = SoftBody.semiDisc()
     private val contacts = Contacts(body.size, body.ringCount)
 
+    /** The collision step of a substep, made once rather than on every call. */
+    private val collide: () -> Unit = { grid.resolve(body, contacts) }
+
     /** Whether any particle rested on something facing up during the last step. */
     var isGrounded = false
         private set
@@ -43,7 +46,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     private var isJumpRising = false
 
     init {
-        require(MAX_STEP < SolidGrid.TILE / 2f) { "A substep must stay under half a tile or a particle can tunnel through a corner." }
+        require(SoftBody.MAX_STEP < SolidGrid.TILE / 2f) { "A substep must stay under half a tile or a particle can tunnel through a corner." }
         reset(startX, startBaseY)
     }
 
@@ -87,13 +90,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
         if (body.meanVelocityY(h) >= 0f) isJumpRising = false
         val gravity = if (isJumpRising && !input.jumpHeld) GRAVITY * SHORT_HOP_GRAVITY else GRAVITY
 
-        repeat(SUBSTEPS) {
-            body.integrate(gravity, h, DAMPING, MAX_STEP)
-            repeat(RELAX_ITERATIONS) {
-                body.relax(h, EDGE_COMPLIANCE, SPOKE_COMPLIANCE, AREA_COMPLIANCE)
-                grid.resolve(body, contacts)
-            }
-        }
+        repeat(SUBSTEPS) { body.substep(h, gravity, collide) }
         isGrounded = contacts.touchedFloor
 
         if (contacts.touchedBouncePad && body.meanVelocityY(h) > -BOUNCE_SPEED / 2f) {
@@ -118,30 +115,11 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     }
 
     companion object {
-        /** Physics substeps per 60 Hz step, and constraint passes per substep. */
+        /** Physics substeps per 60 Hz step. */
         const val SUBSTEPS = 4
-        const val RELAX_ITERATIONS = 6
-
-        /** Largest distance a particle may move in one substep; under half a tile so it cannot tunnel through a corner. */
-        const val MAX_STEP = 4f
 
         /** Downward acceleration. */
         const val GRAVITY = 1500f
-
-        /** Share of velocity kept each substep. */
-        const val DAMPING = 0.999f
-
-        /**
-         * How far each kind of constraint gives per unit of force (compliance, 0 is rigid): the ring
-         * edges, the spokes to the core and the area. Soft spokes let the slime stretch and squash,
-         * a soft area lets it sag and be squeezed, stiff edges keep the outline from tearing. These came
-         * from running AcceptanceTest over a grid of values: spokes much softer and the slime flattens
-         * under its own core and does not spring back; much stiffer and it perches on the rim of a shaft
-         * narrower than itself instead of falling in.
-         */
-        const val EDGE_COMPLIANCE = 0.00002f
-        const val SPOKE_COMPLIANCE = 0.0005f
-        const val AREA_COMPLIANCE = 0.0004f
 
         /**
          * Horizontal acceleration on the ground and in the air, and the speed input cannot push past.
