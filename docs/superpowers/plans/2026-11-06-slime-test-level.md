@@ -131,15 +131,15 @@ No unit test (needs a canvas); verified by screenshot in Task 10:
 - [x] Commit: "Paint the slime from its particles"
 
 ### Task 10: Game wiring and visual verification
-- [ ] `Game.kt` `installGame()`: parse `TestLevel`, zoom 3, camera bounds = level, spawn tile sprites (NEAREST) and zone `Text` signs, create slime/input/painter
-- [ ] INPUT: Escape quits, F2 debug, R reset, 1–4 teleport, move axis, jump pressed/held; autopilot overrides when `SLIME_AUTOPILOT=1`
-- [ ] FIXED_UPDATE: `level.advance`, `slime.step`, respawn at the current zone when the slime falls below the level
-- [ ] LATE_UPDATE: `camera.follow` the centroid
-- [ ] RENDER: parallax background (world space, negative layer), crushers as 2×2 sprites, slime, HUD with zone name and controls
-- [ ] `SLIME_ZONE=A..D` picks the start; env read via `platform.posix.getenv`
-- [ ] `Main.kt` calls `installGame()`
-- [ ] Verify with screenshots: one per zone using `SLIME_ZONE` + autopilot + `-Pklyph.screenshot`; look at each; confirm the slime squashes on landing (Zone A), clears the steps (B), goes under the half tunnel and down the shaft (C), rides the hill, bounces to the ledge and survives the crusher (D). Tune `Tuning` if a zone is impassable and re-run `allTests`
-- [ ] Commit: "Wire the slime and test level into the game"
+- [x] `Game.kt` `installGame()`: parse `TestLevel`, zoom 3, camera bounds = level, spawn tile sprites (NEAREST) and zone `Text` signs, create slime/input/painter
+- [x] INPUT: Escape quits, F2 debug, R reset, 1–4 teleport, move axis, jump pressed/held; autopilot overrides when `SLIME_AUTOPILOT=1`
+- [x] FIXED_UPDATE: `level.advance`, `slime.step`, respawn at the current zone when the slime falls below the level
+- [x] LATE_UPDATE: `camera.follow` the centroid
+- [x] RENDER: parallax background (world space, negative layer), crushers as 2×2 sprites, slime, HUD with zone name and controls
+- [x] `SLIME_ZONE=A..D` picks the start; env read via `platform.posix.getenv`
+- [x] `Main.kt` calls `installGame()`
+- [x] Verify with screenshots: one per zone using `SLIME_ZONE` + autopilot + `-Pklyph.screenshot`; look at each; confirm the slime squashes on landing (Zone A), clears the steps (B), goes under the half tunnel and down the shaft (C), rides the hill, bounces to the ledge and survives the crusher (D). Tune `Tuning` if a zone is impassable and re-run `allTests`
+- [x] Commit: "Wire the slime and test level into the game"
 
 ### Task 11: Docs and wrap-up
 - [ ] Update `README.md`: controls, zone keys, env vars, test and screenshot commands, what each zone tests

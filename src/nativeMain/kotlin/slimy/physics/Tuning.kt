@@ -41,8 +41,12 @@ object Tuning {
     const val SPOKE_COMPLIANCE = 0.0005f
     const val AREA_COMPLIANCE = 0.001f
 
-    /** How many times heavier than an outline particle the core is. It stands for the slime's insides. */
-    const val CORE_MASS = 10f
+    /**
+     * How many times heavier than an outline particle the core is. It stands for the slime's
+     * insides, and its weight is what pulls the body through a gap narrower than itself. At 16 or
+     * less a slime resting on a one-tile shaft perches on the rim for good; from 20 it sinks in.
+     */
+    const val CORE_MASS = 30f
 
     /**
      * Horizontal acceleration on the ground and in the air, and the speed input cannot push past.
