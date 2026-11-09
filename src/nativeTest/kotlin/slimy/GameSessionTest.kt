@@ -1,9 +1,8 @@
 package slimy
 
+import klyph.physics.Outline
 import slimy.level.Level
 import slimy.level.TestLevel
-import slimy.physics.Outline
-import slimy.physics.SolidGrid
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -68,12 +67,12 @@ class GameSessionTest {
         val level = Level.parse(listOf("######", "rrrr..", ".....S", "######"))
         val s = GameSession(level)
         val curtain = s.curtains.single()
-        s.slime.reset(2 * SolidGrid.TILE, 3 * SolidGrid.TILE)
+        s.slime.reset(2 * Level.TILE, 3 * Level.TILE)
         var farthest = 0f
         repeat(30) {
             s.step(dt)
             for (r in 0 until curtain.rows) for (c in 0 until curtain.columns) {
-                val restX = curtain.left + c * SolidGrid.TILE
+                val restX = curtain.left + c * Level.TILE
                 farthest = maxOf(farthest, abs(curtain.particleX(r, c) - restX))
             }
         }

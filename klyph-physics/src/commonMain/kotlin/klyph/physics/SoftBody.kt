@@ -1,4 +1,4 @@
-package slimy.physics
+package klyph.physics
 
 import kotlin.math.PI
 import kotlin.math.cos
@@ -10,12 +10,12 @@ import kotlin.math.sqrt
  * outline, in order; particle [ringCount] is the core. Three kinds of constraint hold the shape:
  * stiff distance constraints between neighbours on the ring, soft ones from every ring particle to
  * the core (they remember the shape and let it stretch), and an area constraint that keeps the
- * volume, so squashing the slime in one direction pushes it out in another.
+ * volume, so squashing the body in one direction pushes it out in another.
  *
  * The constraints are XPBD: each has a compliance, the inverse of a stiffness in real units, so a
- * softer body stays softer however many passes run. The core is [coreMass] times heavier than a ring
- * particle and stands for the slime's insides: when the outline is held, say on the rim of a gap,
- * the core's weight drags the body through it.
+ * softer body stays softer however many passes run; [tuning] holds them. The core is [coreMass] times
+ * heavier than a ring particle and stands for the body's insides: when the outline is held, say on
+ * the rim of a gap, the core's weight drags the body through it.
  *
  * Velocity is implicit: the difference between a particle's position and its previous position,
  * which is why [addVelocity] edits the previous position.
@@ -26,6 +26,8 @@ class SoftBody private constructor(
     private val restX: FloatArray,
     private val restY: FloatArray,
     coreMass: Float,
+    /** How stiff, damped and fast the body is. */
+    val tuning: SoftBodyTuning,
 ) {
     /** Outline particles plus the core. */
     val size: Int = ringCount + 1
@@ -82,19 +84,21 @@ class SoftBody private constructor(
 
     /**
      * Starts a substep of [h] seconds: keeps every particle's velocity (damped), adds gravity, caps
-     * the move at [MAX_STEP] and forgets the constraint forces of the substep before.
+     * the move at [SoftBodyTuning.maxStep] and forgets the constraint forces of the substep before.
      */
     private fun integrate(gravity: Float, h: Float) {
         edgeLambda.fill(0f)
         spokeLambda.fill(0f)
         areaLambda = 0f
+        val damping = tuning.damping
+        val maxStep = tuning.maxStep
         for (i in 0 until size) {
-            var dx = (x[i] - prevX[i]) * DAMPING
-            var dy = (y[i] - prevY[i]) * DAMPING + gravity * h * h
+            var dx = (x[i] - prevX[i]) * damping
+            var dy = (y[i] - prevY[i]) * damping + gravity * h * h
             val length = sqrt(dx * dx + dy * dy)
-            if (length > MAX_STEP) {
-                dx *= MAX_STEP / length
-                dy *= MAX_STEP / length
+            if (length > maxStep) {
+                dx *= maxStep / length
+                dy *= maxStep / length
             }
             prevX[i] = x[i]
             prevY[i] = y[i]
@@ -104,14 +108,15 @@ class SoftBody private constructor(
     }
 
     /**
-     * Advances the body by one substep of [h] seconds under [gravity]: it moves, then [RELAX_ITERATIONS]
-     * times its constraints are brought back toward rest and [collide] is called, so the collision step
-     * has the last word in every pass. Integrating and relaxing only work in that order, because moving
-     * forgets the constraint forces that relaxing builds up, so this is the only way to advance a body.
+     * Advances the body by one substep of [h] seconds under [gravity]: it moves, then
+     * [SoftBodyTuning.relaxIterations] times its constraints are brought back toward rest and [collide]
+     * is called, so the collision step has the last word in every pass. Integrating and relaxing only
+     * work in that order, because moving forgets the constraint forces that relaxing builds up, so this
+     * is the only way to advance a body.
      */
     fun substep(h: Float, gravity: Float, collide: () -> Unit) {
         integrate(gravity, h)
-        repeat(RELAX_ITERATIONS) {
+        repeat(tuning.relaxIterations) {
             relax(h)
             collide()
         }
@@ -119,11 +124,11 @@ class SoftBody private constructor(
 
     /** One pass over every constraint of the substep of [h] seconds that [integrate] began. */
     private fun relax(h: Float) {
-        val edgeSoftness = EDGE_COMPLIANCE / (h * h)
-        val spokeSoftness = SPOKE_COMPLIANCE / (h * h)
+        val edgeSoftness = tuning.edgeCompliance / (h * h)
+        val spokeSoftness = tuning.spokeCompliance / (h * h)
         for (i in 0 until ringCount) pull(i, next(i), edgeRest[i], edgeSoftness, edgeLambda, i)
         for (i in 0 until ringCount) pull(i, ringCount, spokeRest[i], spokeSoftness, spokeLambda, i)
-        keepArea(AREA_COMPLIANCE / (h * h))
+        keepArea(tuning.areaCompliance / (h * h))
     }
 
     private fun weight(i: Int): Float = if (i == ringCount) coreWeight else 1f
@@ -306,61 +311,19 @@ class SoftBody private constructor(
     }
 
     companion object {
-        /** Constraint passes per substep, each followed by the collision step. */
-        const val RELAX_ITERATIONS = 6
-
-        /** Largest distance a particle may move in one substep; under half a tile so it cannot tunnel through a corner. */
-        const val MAX_STEP = 4f
-
-        /** Share of velocity kept each substep. */
-        const val DAMPING = 0.999f
-
-        /**
-         * How far each kind of constraint gives per unit of force (compliance, 0 is rigid): the ring
-         * edges, the spokes to the core and the area. Soft spokes let the slime stretch and squash,
-         * a soft area lets it sag and be squeezed, stiff edges keep the outline from tearing. These came
-         * from running AcceptanceTest over a grid of values: spokes much softer and the slime flattens
-         * under its own core and does not spring back; much stiffer and it perches on the rim of a shaft
-         * narrower than itself instead of falling in.
-         */
-        const val EDGE_COMPLIANCE = 0.00002f
-        const val SPOKE_COMPLIANCE = 0.0005f
-        const val AREA_COMPLIANCE = 0.0004f
-
-        /** Radius of the resting half-disc: the slime is 2 * RADIUS wide and RADIUS tall. */
-        const val RADIUS = 13.3f
-
-        /**
-         * How much taller than a half-disc the resting dome is: 1 is a half-circle. The weight of the core
-         * flattens it again, so at 1.3 the slime rests about 31 wide and 15 tall.
-         */
-        const val HEIGHT_SCALE = 1.3f
-
-        /** Ring segments along the dome, and along the flat base. */
-        const val ARC_SEGMENTS = 14
-        const val BASE_SEGMENTS = 8
-
-        /**
-         * How many times heavier than an outline particle the core is. It stands for the slime's
-         * insides, and its weight is what pulls the body through a gap narrower than itself. It is also
-         * what flattens the dome, so rounder slimes and heavier cores pull against each other: with this
-         * shape a slime that lands on a one-tile shaft from a hop sinks through, but one that is placed
-         * on it at rest perches on the rim (it did sink from rest when the dome was lower and the core
-         * 30; see AcceptanceTest and PlaythroughTest).
-         */
-        const val CORE_MASS = 34f
-
         /**
          * A half-disc of [radius]: [arcSegments] segments over the dome from the left end to the
-         * right, then [baseSegments] along the flat base back to the left, with the core where the
-         * half-disc's centre of mass is, with the dome stretched [heightScale] times taller. The base lies on y = 0 and the middle on x = 0; y grows down.
+         * right, then [baseSegments] along the flat base back to the left, with the core, [coreMass]
+         * times heavier than an outline particle, where the half-disc's centre of mass is, and the dome
+         * stretched [heightScale] times taller. The base lies on y = 0 and the middle on x = 0; y grows down.
          */
         fun semiDisc(
-            radius: Float = RADIUS,
-            arcSegments: Int = ARC_SEGMENTS,
-            baseSegments: Int = BASE_SEGMENTS,
-            coreMass: Float = CORE_MASS,
-            heightScale: Float = HEIGHT_SCALE,
+            radius: Float,
+            arcSegments: Int,
+            baseSegments: Int,
+            coreMass: Float,
+            heightScale: Float = 1f,
+            tuning: SoftBodyTuning = SoftBodyTuning(),
         ): SoftBody {
             val ring = arcSegments + baseSegments
             val xs = FloatArray(ring + 1)
@@ -376,7 +339,25 @@ class SoftBody private constructor(
             }
             xs[ring] = 0f
             ys[ring] = -4f * radius / (3f * PI.toFloat()) * heightScale
-            return SoftBody(ring, xs, ys, coreMass)
+            return SoftBody(ring, xs, ys, coreMass, tuning)
         }
     }
 }
+
+/**
+ * How a [SoftBody] behaves. The compliances say how far each kind of constraint gives per unit of
+ * force (0 is rigid): the outline's edges, the spokes from the outline to the core, and the area.
+ * Soft spokes let a body stretch and squash, a soft area lets it sag and be squeezed, and stiff edges
+ * keep the outline from tearing.
+ */
+data class SoftBodyTuning(
+    val edgeCompliance: Float = 0.00002f,
+    val spokeCompliance: Float = 0.0005f,
+    val areaCompliance: Float = 0.0004f,
+    /** Share of its velocity a particle keeps each substep. */
+    val damping: Float = 0.999f,
+    /** Farthest a particle may move in one substep. Keep it under half the thinnest wall, or a particle can tunnel through a corner. */
+    val maxStep: Float = 4f,
+    /** Constraint passes per substep, each followed by the collision step. */
+    val relaxIterations: Int = 6,
+)

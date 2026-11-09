@@ -1,4 +1,4 @@
-package slimy.physics
+package klyph.physics
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -6,7 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SolidsTest {
-    private val body = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS)
+    private val body = TestBodies.dome()
     private val contacts = Contacts(body.size, body.ringCount)
 
     /** Puts particle 0 at ([x], [y]) having come from ([fromX], [fromY]), and every other particle far away. */
@@ -21,7 +21,7 @@ class SolidsTest {
     }
 
     /** A 10 x 10 grid with a floor of full tiles on row 5, whose top is y = 80. */
-    private fun floorGrid(): SolidGrid = TestScenes.flatFloor(10, 10, firstRow = 5, thickness = 1)
+    private fun floorGrid(): SolidGrid = TestBodies.grid().apply { for (c in 0 until cols) fill(c, 5) }
 
     @Test
     fun aParticleFallingIntoTheFloorLandsOnTopKeepingItsSidewaysSpeed() {
@@ -38,7 +38,7 @@ class SolidsTest {
 
     @Test
     fun aParticleHittingTheSideOfABlockIsPushedSidewaysAndIsNotOnTheFloor() {
-        val grid = SolidGrid(10, 10).apply { add(Solid.tile(5, 3)) }
+        val grid = TestBodies.grid().apply { fill(5, 3) }
         particle(82f, 56f, fromX = 78f, fromY = 56f)
         resolve(grid)
         assertEquals(80f, body.positionX(0), 0.001f)
@@ -48,7 +48,7 @@ class SolidsTest {
 
     @Test
     fun aParticleThatStartedInsideLeavesThroughTheNearestFace() {
-        val grid = SolidGrid(10, 10).apply { add(Solid.tile(5, 3)) }
+        val grid = TestBodies.grid().apply { fill(5, 3) }
         particle(94f, 56f)
         resolve(grid)
         assertEquals(96f, body.positionX(0), 0.001f)
@@ -74,17 +74,17 @@ class SolidsTest {
     }
 
     @Test
-    fun aBouncyTileReportsABounceWhenLandedOn() {
-        val grid = SolidGrid(10, 10).apply { add(Solid.tile(4, 5, isBouncy = true)) }
+    fun aTaggedTileReportsItsTagWhenLandedOn() {
+        val grid = TestBodies.grid().apply { fill(4, 5, tag = TestBodies.PAD) }
         particle(72f, 82f, fromY = 70f)
         resolve(grid)
-        assertTrue(contacts.touchedBouncePad)
+        assertTrue(contacts.touched(TestBodies.PAD))
         assertTrue(contacts.touchedFloor)
     }
 
     @Test
     fun aRisingSlopePushesAlongItsSurfaceNormal() {
-        val grid = SolidGrid(10, 10).apply { add(Solid.tile(2, 2, SolidShape.RISING)) }
+        val grid = TestBodies.grid().apply { fill(2, 2, SolidShape.RISING) }
         particle(44f, 44f)
         resolve(grid)
         assertEquals(40f, body.positionX(0), 0.001f)
@@ -94,7 +94,7 @@ class SolidsTest {
 
     @Test
     fun aFallingSlopeMirrorsIt() {
-        val grid = SolidGrid(10, 10).apply { add(Solid.tile(2, 2, SolidShape.FALLING)) }
+        val grid = TestBodies.grid().apply { fill(2, 2, SolidShape.FALLING) }
         particle(36f, 44f)
         resolve(grid)
         assertEquals(40f, body.positionX(0), 0.001f)
@@ -103,7 +103,7 @@ class SolidsTest {
 
     @Test
     fun aHalfTileStubOnlyFillsTheTopHalfOfItsTile() {
-        val grid = SolidGrid(10, 10).apply { add(Solid.stub(4, 4)) }
+        val grid = TestBodies.grid().apply { fillTopHalf(4, 4) }
         particle(70f, 74f)
         resolve(grid)
         // y 64..72 is solid; 74 is below the stub, in the open half of the tile.
@@ -115,7 +115,7 @@ class SolidsTest {
 
     @Test
     fun aMovingSolidPushesToo() {
-        val grid = SolidGrid(10, 10)
+        val grid = TestBodies.grid()
         grid.dynamic.add(Solid.moving(left = 20f, top = 20f, right = 52f, bottom = 52f))
         particle(36f, 50f)
         resolve(grid)
@@ -124,7 +124,7 @@ class SolidsTest {
 
     @Test
     fun aBoxBesideTheTallEdgeOfARisingSlopeCannotBeLeftThroughThatFace() {
-        val grid = SolidGrid(10, 10).apply { add(Solid.tile(4, 5, SolidShape.RISING)); add(Solid.tile(5, 5)) }
+        val grid = TestBodies.grid().apply { fill(4, 5, SolidShape.RISING); fill(5, 5) }
         // inside the box, half a unit from the face it shares with the slope's full-height edge
         particle(80.5f, 82f)
         resolve(grid)
@@ -134,7 +134,7 @@ class SolidsTest {
 
     @Test
     fun aBoxBesideTheLowEdgeOfAFallingSlopeCanBeLeftThroughThatFace() {
-        val grid = SolidGrid(10, 10).apply { add(Solid.tile(4, 5, SolidShape.FALLING)); add(Solid.tile(5, 5)) }
+        val grid = TestBodies.grid().apply { fill(4, 5, SolidShape.FALLING); fill(5, 5) }
         // a falling slope meets the box only at its bottom corner, so that face is open air above it
         particle(80.5f, 82f)
         resolve(grid)
@@ -145,13 +145,13 @@ class SolidsTest {
     @Test
     fun aMovingSolidIsNotATileAndATileIsNotMoving() {
         assertTrue(Solid.moving(0f, 0f, 10f, 10f).isMoving)
-        assertFalse(Solid.tile(2, 3).isMoving)
-        assertFalse(Solid.stub(2, 3).isMoving)
+        assertFalse(TestBodies.grid().fill(2, 3).isMoving)
+        assertFalse(TestBodies.grid().fillTopHalf(2, 3).isMoving)
     }
 
     @Test
     fun aPointIsInsideASolidOnlyPastItsSurfaceByMoreThanTheMargin() {
-        val box = SolidGrid(10, 10).apply { add(Solid.tile(2, 2)) }
+        val box = TestBodies.grid().apply { fill(2, 2) }
         assertTrue(box.isSolidAt(40f, 40f))
         assertFalse(box.isSolidAt(32f, 40f), "a point on the surface is outside")
         assertFalse(box.isSolidAt(10f, 40f))
@@ -161,20 +161,20 @@ class SolidsTest {
 
     @Test
     fun aStubIsOnlySolidInItsTopHalfAndASlopeOnlyBelowItsSurface() {
-        val stub = SolidGrid(10, 10).apply { add(Solid.stub(4, 4)) }
+        val stub = TestBodies.grid().apply { fillTopHalf(4, 4) }
         assertTrue(stub.isSolidAt(70f, 68f))
         assertFalse(stub.isSolidAt(70f, 76f))
-        val rising = SolidGrid(10, 10).apply { add(Solid.tile(2, 2, SolidShape.RISING)) }
+        val rising = TestBodies.grid().apply { fill(2, 2, SolidShape.RISING) }
         assertTrue(rising.isSolidAt(44f, 44f), "below the rising surface")
         assertFalse(rising.isSolidAt(36f, 36f), "above it")
-        val falling = SolidGrid(10, 10).apply { add(Solid.tile(2, 2, SolidShape.FALLING)) }
+        val falling = TestBodies.grid().apply { fill(2, 2, SolidShape.FALLING) }
         assertTrue(falling.isSolidAt(36f, 44f), "below the falling surface")
         assertFalse(falling.isSolidAt(44f, 36f), "above it")
     }
 
     @Test
     fun aMovingSolidIsFoundToo() {
-        val grid = SolidGrid(10, 10)
+        val grid = TestBodies.grid()
         grid.dynamic.add(Solid.moving(20f, 20f, 52f, 52f))
         assertTrue(grid.isSolidAt(36f, 36f))
         assertFalse(grid.isSolidAt(60f, 36f))

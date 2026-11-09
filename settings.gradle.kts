@@ -12,3 +12,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "slimy-the-blob"
+
+include(":klyph-physics")

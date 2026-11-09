@@ -1,4 +1,4 @@
-package slimy.physics
+package klyph.physics
 
 import kotlin.math.floor
 
@@ -6,7 +6,7 @@ private const val DIAGONAL = 0.70710678f
 
 /**
  * A surface whose normal points up by more than this (y grows down, so the normal's y is below it)
- * counts as a floor. A 45 degree slope's normal is at -0.707, so a slime standing on one is grounded.
+ * counts as a floor. A 45 degree slope's normal is at -0.707, so a body standing on one is grounded.
  */
 private const val MIN_FLOOR_NORMAL_Y = -0.5f
 
@@ -23,17 +23,18 @@ enum class SolidShape {
 }
 
 /**
- * Something the slime cannot enter: a rectangle with the given edges (y grows down) filled as
+ * Something a particle cannot enter: a rectangle with the given edges (y grows down) filled as
  * [shape] says. A tile's solid knows its grid cell, so the grid can tell which faces are buried
- * against a neighbour; a [moving] one has none. A bouncy one throws the slime back up.
+ * against a neighbour; a [moving] one has none. Make a tile's solid with [SolidGrid.fill].
  */
-class Solid private constructor(
+class Solid internal constructor(
     val shape: SolidShape,
     val left: Float,
     var top: Float,
     val right: Float,
     var bottom: Float,
-    val isBouncy: Boolean = false,
+    /** Bit flags the game gives this solid, such as "bounce pad", reported to [Contacts] when a body stands on it; 0 for none. */
+    val tag: Int = 0,
     val col: Int = -1,
     val row: Int = -1,
 ) {
@@ -55,28 +56,17 @@ class Solid private constructor(
 
     companion object {
         /** A solid that is not tied to a grid cell, filling the given edges; its [top] and [bottom] may change. */
-        fun moving(left: Float, top: Float, right: Float, bottom: Float): Solid = Solid(SolidShape.BOX, left, top, right, bottom)
-
-        /** The solid filling grid cell ([col], [row]) as [shape]. */
-        fun tile(col: Int, row: Int, shape: SolidShape = SolidShape.BOX, isBouncy: Boolean = false): Solid {
-            val t = SolidGrid.TILE
-            return Solid(shape, col * t, row * t, (col + 1) * t, (row + 1) * t, isBouncy, col, row)
-        }
-
-        /** A ceiling stub: only the top half of cell ([col], [row]) is solid. */
-        fun stub(col: Int, row: Int): Solid {
-            val t = SolidGrid.TILE
-            return Solid(SolidShape.BOX, col * t, row * t, (col + 1) * t, row * t + t / 2f, false, col, row)
-        }
+        fun moving(left: Float, top: Float, right: Float, bottom: Float, tag: Int = 0): Solid =
+            Solid(SolidShape.BOX, left, top, right, bottom, tag)
     }
 }
 
 /**
- * The level's solids: one per tile in a grid of cells [TILE] wide, plus [dynamic] ones that
- * move. A particle is a point, so it can only be inside the one tile it is in, and [resolve] looks
+ * A level's solids: at most one per cell of a grid of [cols] by [rows] cells, each [tileSize] wide,
+ * plus [dynamic] ones that move. A particle is a point, so it can only be inside the one tile it is in, and [resolve] looks
  * at that tile and at every dynamic solid.
  */
-class SolidGrid(val cols: Int, val rows: Int) {
+class SolidGrid(val cols: Int, val rows: Int, val tileSize: Float) {
     private val cells = arrayOfNulls<Solid>(cols * rows)
 
     /** Solids that are not tied to a cell, such as a crusher. Checked every time. */
@@ -85,9 +75,22 @@ class SolidGrid(val cols: Int, val rows: Int) {
     /** The solid in cell ([col], [row]), or `null` for air and for cells outside the grid. */
     fun at(col: Int, row: Int): Solid? = if (col in 0 until cols && row in 0 until rows) cells[row * cols + col] else null
 
-    /** Puts [solid] in its cell. */
-    fun add(solid: Solid) {
+    /** Fills cell ([col], [row]) with a solid of [shape] carrying [tag], and returns it. */
+    fun fill(col: Int, row: Int, shape: SolidShape = SolidShape.BOX, tag: Int = 0): Solid {
+        val t = tileSize
+        return put(Solid(shape, col * t, row * t, (col + 1) * t, (row + 1) * t, tag, col, row))
+    }
+
+    /** Fills only the top half of cell ([col], [row]), such as a stub hanging from a ceiling, and returns it. */
+    fun fillTopHalf(col: Int, row: Int, tag: Int = 0): Solid {
+        val t = tileSize
+        return put(Solid(SolidShape.BOX, col * t, row * t, (col + 1) * t, row * t + t / 2f, tag, col, row))
+    }
+
+    private fun put(solid: Solid): Solid {
+        require(solid.col in 0 until cols && solid.row in 0 until rows) { "Cell (${solid.col}, ${solid.row}) is outside the ${cols}x$rows grid" }
         cells[solid.row * cols + solid.col] = solid
+        return solid
     }
 
     /** Empties cell ([col], [row]). */
@@ -97,7 +100,7 @@ class SolidGrid(val cols: Int, val rows: Int) {
 
     /** Whether the point ([x], [y]) is inside any solid by more than [margin] units; see [Solid.contains]. */
     fun isSolidAt(x: Float, y: Float, margin: Float = 0f): Boolean {
-        val solid = at(floor(x / TILE).toInt(), floor(y / TILE).toInt())
+        val solid = at(floor(x / tileSize).toInt(), floor(y / tileSize).toInt())
         if (solid != null && solid.contains(x, y, margin)) return true
         for (d in dynamic) if (d.contains(x, y, margin)) return true
         return false
@@ -110,7 +113,7 @@ class SolidGrid(val cols: Int, val rows: Int) {
      * tiles has no seams.
      */
     fun resolve(body: SoftBody, contacts: Contacts) {
-        val tile = TILE
+        val tile = tileSize
         for (i in 0 until body.size) {
             val col = floor(body.positionX(i) / tile).toInt()
             val row = floor(body.positionY(i) / tile).toInt()
@@ -131,7 +134,7 @@ class SolidGrid(val cols: Int, val rows: Int) {
             SolidShape.FALLING -> exitFromFalling(solid, px, py, exit)
         }
         body.pushOut(i, exit.nx, exit.ny, exit.depth)
-        if (exit.ny < MIN_FLOOR_NORMAL_Y) contacts.recordFloor(i, solid.isBouncy)
+        if (exit.ny < MIN_FLOOR_NORMAL_Y) contacts.recordFloor(i, solid.tag)
     }
 
     /** Writes to [exit] the cheapest way out of the box for a point inside it. */
@@ -210,9 +213,4 @@ class SolidGrid(val cols: Int, val rows: Int) {
     }
 
     private fun spansHeight(neighbour: Solid, solid: Solid): Boolean = neighbour.top <= solid.top && neighbour.bottom >= solid.bottom
-
-    companion object {
-        /** Side of one level tile. */
-        const val TILE = 16f
-    }
 }

@@ -5,7 +5,6 @@ import slimy.level.Zone
 import slimy.physics.Curtain
 import slimy.physics.Slime
 import slimy.physics.SlimeInput
-import slimy.physics.SolidGrid
 
 /**
  * One play of a [Level]: the slime, the level's curtains, and the rules that tie them together.
@@ -21,7 +20,7 @@ class GameSession(val level: Level) {
     private val start = checkNotNull(level.start) { "The level has no start" }
 
     val slime = Slime(level.grid, start.x, start.y)
-    val curtains: List<Curtain> = level.curtains.map { Curtain(it.left, it.right, it.top) }
+    val curtains: List<Curtain> = level.curtains.map { Curtain(it.left, it.right, it.top, Level.TILE) }
 
     private val input = SlimeInput()
     private var jumpWaiting = false
@@ -79,6 +78,6 @@ class GameSession(val level: Level) {
         const val RESTART_OFFSET = 24f
 
         /** How far below the level's bottom the slime may fall before it is put back. */
-        const val FALL_MARGIN = 4 * SolidGrid.TILE
+        const val FALL_MARGIN = 4 * Level.TILE
     }
 }

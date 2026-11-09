@@ -95,7 +95,8 @@ That's why it doesn't tunnel through walls or explode.
 
 | folder | what |
 |---|---|
-| `physics/` | the slime, the dots, the outline, the floor and wall pushing, the curtain. **No engine code here** (that's why it's testable) |
+| `klyph-physics/` | the reusable part: soft bodies made of dots, their outline, tiles and slopes they get pushed out of. **Its own module**, knows nothing about the slime, so it can move into klyph later |
+| `physics/` | the slime (its input, jump and tuning) and the curtain, built on `klyph-physics`. **No engine code here** (that's why it's testable) |
 | `level/` | the level is a **text map**: `#` ground, `v` low ceiling, `J` bounce pad, `M` crusher, `r` curtain |
 | `render/` | draws the slime one pixel row at a time (klyph has no polygons) |
 | `GameSession.kt` | the rules: step order, jump buffering, falling out, restarts. **Also no engine code**, so a test plays the same code the game runs |
