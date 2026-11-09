@@ -1,10 +1,10 @@
 package slimy.render
 
+import klyph.physics.Outline
 import klyph.platform.Color
 import klyph.render.Canvas
 import klyph.render.DrawSpace
 import klyph.render.TextureRegion
-import slimy.physics.Outline
 import slimy.physics.Slime
 import kotlin.math.ceil
 import kotlin.math.floor

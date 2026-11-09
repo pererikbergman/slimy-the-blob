@@ -1,5 +1,7 @@
 package slimy.physics
 
+import klyph.physics.SolidGrid
+import slimy.level.Level
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -7,9 +9,9 @@ import kotlin.test.assertTrue
 /** The acceptance criteria of the PRD, as tests on small hand-built levels. */
 class AcceptanceTest {
     private val dt = 1f / 60f
-    private val tile = SolidGrid.TILE
-    private val restWidth = 2 * SoftBody.RADIUS
-    private val restArea = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS).area()
+    private val tile = Level.TILE
+    private val restWidth = 2 * Slime.RADIUS
+    private val restArea = Slime.newBody().area()
 
     private fun Slime.run(steps: Int, move: Float = 0f) = repeat(steps) {
         step(SlimeInput(move = move), dt)
@@ -60,8 +62,8 @@ class AcceptanceTest {
     fun theSlimePushesThroughALowTunnelAndRecovers() {
         // A floor at row 16 (top 256), a tunnel from col 10 to 15 whose ceiling leaves 8 units: 60% of the slime's height.
         val grid = TestScenes.flatFloor(40, 20, firstRow = 16)
-        for (c in 10..15) { grid.add(Solid.tile(c, 14)); grid.add(Solid.stub(c, 15)) }
-        for (r in 0..15) { grid.add(Solid.tile(0, r)); grid.add(Solid.tile(39, r)) }
+        for (c in 10..15) { grid.fill(c, 14); grid.fillTopHalf(c, 15) }
+        for (r in 0..15) { grid.fill(0, r); grid.fill(39, r) }
         val slime = Slime(grid, startX = 6 * tile, startBaseY = 16 * tile)
         slime.run(60)
         var pushed = 0
@@ -87,7 +89,7 @@ class AcceptanceTest {
     @Test
     fun landingOnTheCornerOfABlockNeverLeavesAParticleInsideIt() {
         val grid = TestScenes.flatFloor(40, 50, firstRow = 40)
-        for (c in 20..25) for (r in 37..39) grid.add(Solid.tile(c, r))
+        for (c in 20..25) for (r in 37..39) grid.fill(c, r)
         // Centred on the block's left edge, so half the slime lands on it and half beside it.
         val slime = Slime(grid, startX = 20 * tile, startBaseY = 30 * tile - 300f)
         repeat(300) {

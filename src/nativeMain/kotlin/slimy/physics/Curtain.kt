@@ -1,19 +1,21 @@
 package slimy.physics
 
+import klyph.physics.Outline
+import klyph.physics.SoftBody
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
  * A curtain of hanging strands, like cloth: [ROWS] Verlet particles down each strand,
- * the top ones pinned along a ledge from [left] to [right] at height [top], one strand every tile.
+ * the top ones pinned along a ledge from [left] to [right] at height [top], one strand every [spacing] units.
  * Strands are held to their length and loosely to their neighbours. A slime that moves into the
  * curtain pushes the particles out of its body, so the cloth swings, and settles again after.
  * The curtain does not push back on the slime.
  *
  * A particle is named by its row down the strand and its column across; row 0 is the pinned one.
  */
-class Curtain(val left: Float, val right: Float, val top: Float) {
-    val columns: Int = ((right - left) / SolidGrid.TILE).roundToInt() + 1
+class Curtain(val left: Float, val right: Float, val top: Float, val spacing: Float) {
+    val columns: Int = ((right - left) / spacing).roundToInt() + 1
     val rows: Int = ROWS
     private val count: Int = columns * rows
     private val x = FloatArray(count)
@@ -31,7 +33,7 @@ class Curtain(val left: Float, val right: Float, val top: Float) {
     init {
         for (r in 0 until rows) for (c in 0 until columns) {
             val i = r * columns + c
-            x[i] = left + c * SolidGrid.TILE
+            x[i] = left + c * spacing
             y[i] = top + r * SEGMENT
             prevX[i] = x[i]
             prevY[i] = y[i]
@@ -45,7 +47,7 @@ class Curtain(val left: Float, val right: Float, val top: Float) {
             integrate(h)
             repeat(ITERATIONS) {
                 for (r in 0 until rows - 1) for (c in 0 until columns) link(r * columns + c, (r + 1) * columns + c, SEGMENT, 1f, onlyWhenStretched = false)
-                for (r in 1 until rows) for (c in 0 until columns - 1) link(r * columns + c, r * columns + c + 1, SolidGrid.TILE, SIDE_STIFFNESS, onlyWhenStretched = true)
+                for (r in 1 until rows) for (c in 0 until columns - 1) link(r * columns + c, r * columns + c + 1, spacing, SIDE_STIFFNESS, onlyWhenStretched = true)
                 if (slime != null) for (i in columns until count) pushOut(slime, i)
             }
         }

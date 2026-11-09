@@ -1,5 +1,7 @@
 package slimy.physics
 
+import klyph.physics.SolidGrid
+import slimy.level.Level
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,7 +10,7 @@ import kotlin.test.assertTrue
 
 class SlimeTest {
     private val dt = 1f / 60f
-    private val floorTop = 15 * SolidGrid.TILE
+    private val floorTop = 15 * Level.TILE
 
     /** 40 x 20 tiles with a two-tile floor whose top is y = 240; [bouncy] columns get a bounce pad on top. */
     private fun grid(bouncy: IntRange = IntRange.EMPTY): SolidGrid = TestScenes.flatFloor(40, 20, firstRow = 15, bouncy = bouncy)
@@ -48,7 +50,7 @@ class SlimeTest {
             slime.step(SlimeInput(jumpHeld = true), dt)
             if (slime.body.maxY() < highest) highest = slime.body.maxY()
         }
-        assertTrue(floorTop - highest >= 2 * SolidGrid.TILE, "lifted ${floorTop - highest}")
+        assertTrue(floorTop - highest >= 2 * Level.TILE, "lifted ${floorTop - highest}")
     }
 
     @Test

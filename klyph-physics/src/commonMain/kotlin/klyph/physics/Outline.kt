@@ -1,12 +1,12 @@
-package slimy.physics
+package klyph.physics
 
 import kotlin.math.sqrt
 
 /**
  * Where a [SoftBody]'s outline is, as shapes: what lies inside it, the stretches of a row that lie
  * inside it, and the nearest point on it. This is the one place that knows how the outline's edges
- * join up, so the painter that fills the slime and the curtain that gets pushed by it agree about
- * what "inside" means, even when the outline has folded over itself.
+ * join up, so whatever fills the body on screen and whatever gets pushed out of it agree about what
+ * "inside" means, even when the outline has folded over itself.
  *
  * Inside is decided by winding number, not even-odd: a point the outline winds around at all counts,
  * so a folded part of the body is solid rather than hollow.

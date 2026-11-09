@@ -65,11 +65,11 @@ SLIME_ZONE=C ./gradlew run -Pklyph.autopilot=1                       # start in 
 | `physics/AcceptanceTest` | The PRD's criteria: no blow-up or tearing in a one-tile shaft, passing a gap 60% of its size and recovering its shape, no particle left inside a solid after long falls or corner landings. |
 | `physics/SlimeTest` | A jump pressed this step is rising by the end of it, jump height, buffered jumps, top speed, bounce pads. |
 | `physics/CurtainTest` | The hanging red slime hangs straight, is pushed out of the slime's body, swings when it is walked through and settles again. |
-| `physics/SoftBodyTest`, `SolidsTest` | The constraints, and pushing particles out of boxes, slopes and stubs, including which faces are buried against a neighbour. |
-| `physics/ContactsTest` | What the slime rested on this step and last step, and that the core never counts as a foot. |
+| `klyph-physics`: `SoftBodyTest`, `SolidsTest` | The constraints, and pushing particles out of boxes, slopes and stubs, including which faces are buried against a neighbour. |
+| `klyph-physics`: `ContactsTest` | What a body rested on this step and last step, the tags of what it touched, and that the core never counts as a foot. |
 | `level/LevelTest`, `TestLevelTest` | Reading the tile map; the shape of the four zones. |
 | `level/PlaythroughTest` | A bot plays every zone on the real level and physics: hold right, jump at walls and pits. |
-| `physics/OutlineTest` | The rows used to fill the slime add up to its area, and the fill and the curtain agree about what is inside even when the outline has folded over itself. |
+| `klyph-physics`: `OutlineTest` | The rows used to fill a body add up to its area, and the fill and the curtain agree about what is inside even when the outline has folded over itself. |
 | `GameSessionTest` | A jump press counts once, a slime that falls out is put back in its zone, and the curtains are stepped with the slime. |
 
 ## Layout
@@ -78,7 +78,8 @@ SLIME_ZONE=C ./gradlew run -Pklyph.autopilot=1                       # start in 
 |---|---|
 | `src/nativeMain/kotlin/slimy/GameSession.kt` | The game's rules with no engine code: the slime, the curtains, the order of a step. |
 | `src/nativeMain/kotlin/slimy/Main.kt`, `Game.kt` | The window, camera, input and HUD, reading the keyboard into the session. |
-| `src/nativeMain/kotlin/slimy/physics/` | `SoftBody`, `Outline`, `Solids`, `Contacts`, `Slime`, `Curtain`. Each owns the numbers that decide how it behaves, in its `companion object` (the hanging red slime). |
+| `klyph-physics/` | A separate Gradle module, package `klyph.physics`: `SoftBody` and its `SoftBodyTuning`, `Outline`, `Solids` (`Solid`, `SolidGrid`), `Contacts`. Pure Kotlin in `commonMain` that depends on neither the game nor klyph, so it can move into the engine as it is. It knows no tile size and no bounce pads: the grid is given its tile size, and a solid carries `tag` bits that the game gives meaning. |
+| `src/nativeMain/kotlin/slimy/physics/` | `Slime` and `Curtain`, built on `klyph-physics`. Each owns the numbers that decide how it behaves, in its `companion object`: the slime's shape, weight and `SoftBodyTuning` are in `Slime`'s (the hanging red slime). |
 | `src/nativeMain/kotlin/slimy/level/` | `LevelMap` and `Level` (tile characters in, solids and sprites out) and `TestLevel`. |
 | `src/nativeMain/kotlin/slimy/render/` | `SlimePainter`, `CurtainPainter`, `Lines`. |
 | `assets/` | `tiles.png` and `tiles.json`, `crusher.png`, `face.png`, `bg.png`. |

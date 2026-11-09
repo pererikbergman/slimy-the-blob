@@ -1,4 +1,4 @@
-package slimy.physics
+package klyph.physics
 
 import kotlin.math.abs
 import kotlin.test.Test
@@ -6,16 +6,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SoftBodyTest {
-    private val h = 1f / (60f * Slime.SUBSTEPS)
+    private val h = TestBodies.H
 
-    private fun body(): SoftBody = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS)
+    private fun body(): SoftBody = TestBodies.dome()
 
     @Test
     fun theRestShapeIsADomeAsWideAsTwiceItsRadiusAndHeightScaleTimesItsRadiusTall() {
         val b = body()
-        assertEquals(SoftBody.ARC_SEGMENTS + SoftBody.BASE_SEGMENTS, b.ringCount)
-        assertEquals(2 * SoftBody.RADIUS, b.maxX() - b.minX(), 0.01f)
-        assertEquals(SoftBody.RADIUS * SoftBody.HEIGHT_SCALE, b.maxY() - b.minY(), 0.01f)
+        assertEquals(TestBodies.ARC_SEGMENTS + TestBodies.BASE_SEGMENTS, b.ringCount)
+        assertEquals(2 * TestBodies.RADIUS, b.maxX() - b.minX(), 0.01f)
+        assertEquals(TestBodies.RADIUS * TestBodies.HEIGHT_SCALE, b.maxY() - b.minY(), 0.01f)
     }
 
     @Test
@@ -33,10 +33,10 @@ class SoftBodyTest {
         b.placeAt(0f, 0f)
         val before = b.positionY(3)
         b.addVelocityAll(0f, 100_000f, h)
-        b.substep(h, Slime.GRAVITY) {}
+        b.substep(h, TestBodies.GRAVITY) {}
         val moved = b.positionY(3) - before
         assertTrue(moved > 0f, "moved $moved")
-        assertTrue(moved <= SoftBody.MAX_STEP + 0.05f, "moved $moved")
+        assertTrue(moved <= b.tuning.maxStep + 0.05f, "moved $moved")
     }
 
     @Test
@@ -70,11 +70,11 @@ class SoftBodyTest {
         val b = body()
         b.placeAt(0f, 0f)
         var calls = 0
-        b.substep(h, Slime.GRAVITY) {
+        b.substep(h, TestBodies.GRAVITY) {
             calls++
             b.setParticle(0, 123f, 45f)
         }
-        assertEquals(SoftBody.RELAX_ITERATIONS, calls)
+        assertEquals(b.tuning.relaxIterations, calls)
         assertEquals(123f, b.positionX(0))
         assertEquals(45f, b.positionY(0))
     }

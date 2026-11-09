@@ -1,5 +1,7 @@
 package slimy.physics
 
+import klyph.physics.Outline
+import slimy.level.Level
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -9,11 +11,11 @@ class CurtainTest {
     private val top = 100f
 
     /** Three tiles wide, so four strands, hanging from y = 100. */
-    private fun curtain() = Curtain(left = 0f, right = 3 * SolidGrid.TILE, top = top)
+    private fun curtain() = Curtain(left = 0f, right = 3 * Level.TILE, top = top, spacing = Level.TILE)
 
-    private fun body(centerX: Float, baseY: Float) = SoftBody.semiDisc(SoftBody.RADIUS, SoftBody.ARC_SEGMENTS, SoftBody.BASE_SEGMENTS).also { it.placeAt(centerX, baseY) }
+    private fun body(centerX: Float, baseY: Float) = Slime.newBody().also { it.placeAt(centerX, baseY) }
 
-    private fun Curtain.restX(c: Int) = left + c * SolidGrid.TILE
+    private fun Curtain.restX(c: Int) = left + c * Level.TILE
 
     private fun Curtain.farthestFromRest(): Float {
         var worst = 0f
@@ -41,7 +43,7 @@ class CurtainTest {
         repeat(60) { curtain.step(null, dt) }
         val tipRow = curtain.rows - 1
         // Centred on the second strand with its dome up through the strand's lower half.
-        val slime = body(centerX = SolidGrid.TILE, baseY = top + tipRow * Curtain.SEGMENT + 2f)
+        val slime = body(centerX = Level.TILE, baseY = top + tipRow * Curtain.SEGMENT + 2f)
         repeat(30) { curtain.step(slime, dt) }
         for (r in 1 until curtain.rows) for (c in 0 until curtain.columns) {
             assertTrue(!Outline.contains(slime, curtain.particleX(r, c), curtain.particleY(r, c)), "particle ($r, $c) is inside the slime")

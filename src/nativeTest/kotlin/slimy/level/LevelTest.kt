@@ -1,6 +1,7 @@
 package slimy.level
 
-import slimy.physics.SolidShape
+import klyph.physics.SolidShape
+import slimy.physics.Slime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -36,7 +37,7 @@ class LevelTest {
         assertEquals(8f, stub.bottom - stub.top, 0.001f)
         assertEquals(SolidShape.RISING, level.grid.at(2, 0)!!.shape)
         assertEquals(SolidShape.FALLING, level.grid.at(3, 0)!!.shape)
-        assertTrue(level.grid.at(4, 0)!!.isBouncy)
+        assertTrue(level.grid.at(4, 0)!!.tag == Slime.BOUNCE_PAD)
     }
 
     @Test

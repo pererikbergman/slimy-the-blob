@@ -1,5 +1,10 @@
 package slimy.physics
 
+import klyph.physics.Contacts
+import klyph.physics.SoftBody
+import klyph.physics.SoftBodyTuning
+import klyph.physics.SolidGrid
+
 /** What the player asks of the slime this step. [move] is -1 for left to 1 for right. */
 class SlimeInput(
     var move: Float = 0f,
@@ -14,7 +19,7 @@ class SlimeInput(
  * fixed step, cut into [SUBSTEPS] substeps of integrate, relax and collide.
  */
 class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
-    val body: SoftBody = SoftBody.semiDisc()
+    val body: SoftBody = newBody()
     private val contacts = Contacts(body.size, body.ringCount)
 
     /** The collision step of a substep, made once rather than on every call. */
@@ -46,7 +51,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     private var isJumpRising = false
 
     init {
-        require(SoftBody.MAX_STEP < SolidGrid.TILE / 2f) { "A substep must stay under half a tile or a particle can tunnel through a corner." }
+        require(body.tuning.maxStep < grid.tileSize / 2f) { "A substep must stay under half a tile or a particle can tunnel through a corner." }
         reset(startX, startBaseY)
     }
 
@@ -93,7 +98,7 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
         repeat(SUBSTEPS) { body.substep(h, gravity, collide) }
         isGrounded = contacts.touchedFloor
 
-        if (contacts.touchedBouncePad && body.meanVelocityY(h) > -BOUNCE_SPEED / 2f) {
+        if (contacts.touched(BOUNCE_PAD) && body.meanVelocityY(h) > -BOUNCE_SPEED / 2f) {
             for (i in 0 until body.size) body.setVelocityY(i, -BOUNCE_SPEED, h)
             hasBounced = true
             isGrounded = false
@@ -115,6 +120,50 @@ class Slime(private val grid: SolidGrid, startX: Float, startBaseY: Float) {
     }
 
     companion object {
+        /** The [klyph.physics.Solid.tag] of a bounce pad, which throws the slime up. */
+        const val BOUNCE_PAD = 1
+
+        /** Radius of the resting half-disc: the slime is 2 * RADIUS wide and RADIUS tall. */
+        const val RADIUS = 13.3f
+
+        /**
+         * How much taller than a half-disc the resting dome is: 1 is a half-circle. The weight of the core
+         * flattens it again, so at 1.3 the slime rests about 31 wide and 15 tall.
+         */
+        const val HEIGHT_SCALE = 1.3f
+
+        /** Ring segments along the dome, and along the flat base. */
+        const val ARC_SEGMENTS = 14
+        const val BASE_SEGMENTS = 8
+
+        /**
+         * How many times heavier than an outline particle the core is. It stands for the slime's
+         * insides, and its weight is what pulls the body through a gap narrower than itself. It is also
+         * what flattens the dome, so rounder slimes and heavier cores pull against each other: with this
+         * shape a slime that lands on a one-tile shaft from a hop sinks through, but one that is placed
+         * on it at rest perches on the rim (it did sink from rest when the dome was lower and the core
+         * 30; see AcceptanceTest and PlaythroughTest).
+         */
+        const val CORE_MASS = 34f
+
+        /**
+         * How soft the slime is. The compliances came from running AcceptanceTest over a grid of values:
+         * spokes much softer and the slime flattens under its own core and does not spring back; much
+         * stiffer and it perches on the rim of a shaft narrower than itself instead of falling in. A
+         * particle moves at most 4 units a substep, under half a tile, so it cannot tunnel through a corner.
+         */
+        val TUNING = SoftBodyTuning(
+            edgeCompliance = 0.00002f,
+            spokeCompliance = 0.0005f,
+            areaCompliance = 0.0004f,
+            damping = 0.999f,
+            maxStep = 4f,
+            relaxIterations = 6,
+        )
+
+        /** A slime's body at rest, with its base on y = 0 and its middle on x = 0. */
+        fun newBody(): SoftBody = SoftBody.semiDisc(RADIUS, ARC_SEGMENTS, BASE_SEGMENTS, CORE_MASS, HEIGHT_SCALE, TUNING)
+
         /** Physics substeps per 60 Hz step. */
         const val SUBSTEPS = 4
 

@@ -1,8 +1,9 @@
 package slimy.level
 
-import slimy.physics.Solid
-import slimy.physics.SolidGrid
-import slimy.physics.SolidShape
+import klyph.physics.Solid
+import klyph.physics.SolidGrid
+import klyph.physics.SolidShape
+import slimy.physics.Slime
 import kotlin.math.PI
 import kotlin.math.cos
 
@@ -107,8 +108,8 @@ class Level private constructor(
 ) {
     private var seconds = 0f
 
-    val width: Float get() = cols * SolidGrid.TILE
-    val height: Float get() = rows * SolidGrid.TILE
+    val width: Float get() = cols * TILE
+    val height: Float get() = rows * TILE
 
     /** Moves everything that moves by [dt] seconds. */
     fun advance(dt: Float) {
@@ -126,34 +127,36 @@ class Level private constructor(
     fun zoneAt(x: Float): Zone? = zones.lastOrNull { it.x <= x } ?: zones.firstOrNull()
 
     companion object {
+        /** Side of one tile, in world units. */
+        const val TILE = 16f
+
         /** Reads [rows], top row first. Every row must be as long as the first and use only the characters above. */
         fun parse(rows: List<String>): Level {
             val cols = rows.firstOrNull()?.length ?: 0
             for ((index, row) in rows.withIndex()) require(row.length == cols) { "Row $index has ${row.length} tiles, not $cols" }
-            val grid = SolidGrid(cols, rows.size)
+            val grid = SolidGrid(cols, rows.size, TILE)
             val tiles = ArrayList<PlacedTile>()
             val zones = ArrayList<Zone>()
             val crushers = ArrayList<Crusher>()
             val curtains = ArrayList<CurtainSpec>()
             var start: Spot? = null
             var finish: Spot? = null
-            val t = SolidGrid.TILE
+            val t = TILE
 
             fun place(solid: Solid, tile: Int) {
-                grid.add(solid)
                 tiles.add(PlacedTile(solid.col, solid.row, tile))
             }
-            fun solid(col: Int, row: Int, tile: Int, shape: SolidShape = SolidShape.BOX, bouncy: Boolean = false) = place(Solid.tile(col, row, shape, bouncy), tile)
+            fun solid(col: Int, row: Int, tile: Int, shape: SolidShape = SolidShape.BOX, tag: Int = 0) = place(grid.fill(col, row, shape, tag), tile)
 
             for (row in rows.indices) for (col in 0 until cols) {
                 val spot = Spot((col + 0.5f) * t, (row + 1) * t)
                 when (val char = rows[row][col]) {
                     Legend.AIR -> {}
                     Legend.GROUND -> solid(col, row, if (row > 0 && rows[row - 1][col] == Legend.GROUND) Tiles.DIRT else Tiles.GRASS)
-                    Legend.STUB -> place(Solid.stub(col, row), Tiles.STUB)
+                    Legend.STUB -> place(grid.fillTopHalf(col, row), Tiles.STUB)
                     Legend.RISING -> solid(col, row, Tiles.SLOPE_UP, SolidShape.RISING)
                     Legend.FALLING -> solid(col, row, Tiles.SLOPE_DOWN, SolidShape.FALLING)
-                    Legend.PAD -> solid(col, row, Tiles.PAD, bouncy = true)
+                    Legend.PAD -> solid(col, row, Tiles.PAD, tag = Slime.BOUNCE_PAD)
                     Legend.START -> start = spot
                     Legend.FINISH -> finish = spot
                     in Legend.ZONE_SIGNS -> {
@@ -173,7 +176,7 @@ class Level private constructor(
         }
 
         private fun crusherAt(rows: List<String>, col: Int, row: Int, grid: SolidGrid): Crusher {
-            val t = SolidGrid.TILE
+            val t = TILE
             var floorRow = row + 2
             while (floorRow < rows.size && Legend.isOpen(rows[floorRow][col])) floorRow++
             require(floorRow < rows.size) { "The crusher at ($col, $row) has no floor below it" }
